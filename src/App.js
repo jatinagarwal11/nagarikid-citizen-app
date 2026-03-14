@@ -83,6 +83,7 @@ function App() {
 
   useEffect(() => {
     if (loggedIn) {
+      loadUser(); // Load user data immediately when logged in
       const interval = setInterval(() => {
         setCountdown(prev => {
           if (prev <= 1) {
@@ -103,6 +104,16 @@ function App() {
         <input id="national_id" placeholder="National ID" />
         <input id="password" type="password" placeholder="Password" />
         <button onClick={() => login(document.getElementById('national_id').value, document.getElementById('password').value)}>Login</button>
+      </div>
+    );
+  }
+
+  // Show loading while user data is being fetched
+  if (!user) {
+    return (
+      <div className="loading">
+        <h1>NagarikID</h1>
+        <p>Loading your digital identity...</p>
       </div>
     );
   }
