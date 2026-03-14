@@ -10,35 +10,68 @@ function App() {
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 
   const login = async (national_id, password) => {
-    const res = await fetch(`${API_BASE}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ national_id, password })
-    });
-    const data = await res.json();
-    if (data.token) {
-      localStorage.setItem('token', data.token);
-      setLoggedIn(true);
-      loadUser();
-    } else {
-      alert('Invalid credentials');
+    try {
+      console.log('Attempting login to:', API_BASE);
+      const res = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ national_id, password })
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log('Login response:', data);
+      
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        setLoggedIn(true);
+        loadUser();
+      } else {
+        alert('Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed: ' + error.message + '. Check console for details.');
     }
   };
 
   const loadUser = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${API_BASE}/generate-token`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await res.json();
-    if (data.uid) {
-      const userRes = await fetch(`${API_BASE}/user`, {
+    try {
+      const token = localStorage.getItem('token');
+      console.log('Loading user data...');
+      const res = await fetch(`${API_BASE}/generate-token`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const userData = await userRes.json();
-      setUser({ ...userData, qrData: data });
-      generateQR(data);
-      setCountdown(5);
+      
+      if (!res.ok) {
+        throw new Error(`Token generation failed: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log('Token data:', data);
+      
+      if (data.uid) {
+        const userRes = await fetch(`${API_BASE}/user`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (!userRes.ok) {
+          throw new Error(`User data fetch failed: ${userRes.status}`);
+        }
+        
+        const userData = await userRes.json();
+        console.log('User data:', userData);
+        
+        setUser({ ...userData, qrData: data });
+        generateQR(data);
+        setCountdown(5);
+      }
+    } catch (error) {
+      console.error('Load user error:', error);
+      alert('Failed to load user data: ' + error.message);
     }
   }, [API_BASE]);
 
