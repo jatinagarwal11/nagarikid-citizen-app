@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
 import './App.css';
 
@@ -25,7 +25,7 @@ function App() {
     }
   };
 
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     const token = localStorage.getItem('token');
     const res = await fetch(`${API_BASE}/generate-token`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -40,7 +40,7 @@ function App() {
       generateQR(data);
       setCountdown(5);
     }
-  };
+  }, [API_BASE]);
 
   const generateQR = async (data) => {
     const qrString = JSON.stringify(data);
@@ -61,7 +61,7 @@ function App() {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [loggedIn]);
+  }, [loggedIn, loadUser]);
 
   if (!loggedIn) {
     return (
@@ -76,7 +76,7 @@ function App() {
 
   return (
     <div className="id-card">
-      <img src={user.photo_url || 'https://via.placeholder.com/100'} alt="Photo" />
+      <img src={user.photo_url || 'https://via.placeholder.com/100'} alt="Portrait of verified person" />
       <h2>{user.name}</h2>
       <p>National ID: {user.national_id}</p>
       <p>DOB: {user.dob}</p>
