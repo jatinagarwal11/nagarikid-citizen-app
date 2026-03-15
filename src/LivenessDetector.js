@@ -39,10 +39,6 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
   const challengeStartTimeRef = useRef(null);
   const lastFacePositionRef = useRef({ x: 0, y: 0 });
 
-  const stabilityTimerRef = useRef(null);
-  const challengeStartTimeRef = useRef(null);
-  const lastFacePositionRef = useRef({ x: 0, y: 0 });
-
   const drawUI = (ctx, width, height) => {
     const centerX = width / 2;
     const centerY = height / 2;
