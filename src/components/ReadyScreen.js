@@ -37,6 +37,23 @@ const ReadyScreen = ({ onBeginScan }) => {
         <button className="begin-scan-button" onClick={onBeginScan}>
           Begin scan
         </button>
+
+        <div className="liveness-info">
+          <h3 className="liveness-info-title">About Liveness Detection</h3>
+          <p className="liveness-info-text">
+            This face verification uses a passive liveness detection approach inspired by
+            the research paper <em>"FaceLivenessNet: A lightweight CNN for detecting face liveness"</em> by
+            Yaojie Liu, Amin Jourabloo, and Xiaoming Liu (Michigan State University, 2018).
+            The technique analyses texture and depth cues from a single frame to distinguish
+            a live face from a printed photo or screen replay.
+          </p>
+          <p className="liveness-info-disclaimer">
+            <strong>Disclaimer:</strong> The liveness detector in this prototype has <strong>not</strong> been
+            fine-tuned or trained on real data. It operates exclusively on the simulated data
+            within this demo and will not generalise to arbitrary faces or spoofing attacks.
+            It should not be used for production identity verification.
+          </p>
+        </div>
       </div>
     </div>
   );

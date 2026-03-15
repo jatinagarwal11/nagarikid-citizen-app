@@ -152,6 +152,7 @@ function PharmacyResult({ data, decision, reason }) {
           <p className="drug-none">No restricted drugs authorised for this patient.</p>
         )}
       </div>
+      <div className="disclaimer-inline">ℹ Drug authorisation data is simulated. No real prescriptions are verified.</div>
     </div>
   );
 }
@@ -262,6 +263,7 @@ const VerifierPage = ({ onBack }) => {
         <div className="verifier-dashboard">
           <h1 className="verifier-title">{companyName}</h1>
           <p className="verifier-subtitle">Logged in as {TYPE_LABELS[businessType] || businessType} verifier</p>
+          <div className="disclaimer-inline">ℹ All verification results shown here use simulated citizen data for demonstration purposes.</div>
           <div className="verifier-actions">
             <button className="btn-primary" onClick={() => setStep('scanning')}>Scan QR Code</button>
             <button className="btn-secondary" onClick={() => setStep('history')}>Verification History</button>

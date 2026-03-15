@@ -15,6 +15,10 @@ const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 function LandingPage({ onSelectCitizen, onSelectVerifier, onSelectAdmin }) {
   return (
     <div className="landing">
+      <div className="disclaimer-banner">
+        <span className="disclaimer-icon">⚠</span>
+        <span>All data displayed in this application is <strong>simulated</strong> and does not represent real individuals, organisations, or government records. This is a prototype built for academic demonstration purposes only.</span>
+      </div>
       <div className="landing-inner">
         <div className="landing-brand">
           <div className="brand-mark">N</div>
@@ -60,6 +64,7 @@ function LandingPage({ onSelectCitizen, onSelectVerifier, onSelectAdmin }) {
         </div>
 
         <p className="landing-footer">Secure · Tamper-proof · Instant verification</p>
+        <p className="landing-disclaimer">This is a prototype demo. No real identity data is collected, stored, or verified.</p>
       </div>
     </div>
   );
@@ -359,6 +364,7 @@ function CitizenFlow({ onBack }) {
         <div className="dash-section">
           <h2 className="dash-section-title">My Access History</h2>
           <p className="dash-section-sub">Every time an organisation accessed your data</p>
+          <div className="disclaimer-inline">ℹ Audit entries below include simulated suspicious activity for demonstration purposes.</div>
           <AuditTrail entries={auditData} mode="citizen" />
         </div>
       )}

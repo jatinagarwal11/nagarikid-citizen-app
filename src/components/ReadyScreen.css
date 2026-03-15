@@ -91,6 +91,44 @@
   opacity: 0.7;
 }
 
+/* ── Liveness info section ── */
+.liveness-info {
+  margin-top: 1.5rem;
+  text-align: left;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+.liveness-info-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+  margin: 0 0 0.5rem;
+}
+.liveness-info-text {
+  font-size: 0.75rem;
+  color: var(--foreground);
+  line-height: 1.6;
+  margin: 0 0 0.75rem;
+}
+.liveness-info-text em {
+  color: var(--foreground);
+  font-style: italic;
+}
+.liveness-info-disclaimer {
+  font-size: 0.6875rem;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
 @media (max-width: 480px) {
   .ready-content {
     max-width: 340px;

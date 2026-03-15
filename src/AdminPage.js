@@ -44,6 +44,7 @@ function AdminLogin({ onLogin }) {
         <button className="btn-primary" type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign In'}</button>
       </form>
       <p className="login-hint">Demo: admin / password</p>
+      <p className="disclaimer-inline" style={{marginTop:'0.75rem',maxWidth:'320px'}}>ℹ This admin portal uses simulated data. No real citizen records are accessed.</p>
     </div>
   );
 }
