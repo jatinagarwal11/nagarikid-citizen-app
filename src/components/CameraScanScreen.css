@@ -109,34 +109,35 @@
 /* ── progress ring: grey track → green fill per step ─── */
 .oval-progress-ring {
   position: absolute;
-  top: -4px;
-  left: -4px;
-  width: calc(100% + 8px);
-  height: calc(100% + 8px);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   transform: rotate(-90deg);
   pointer-events: none;
   z-index: 2;
+  overflow: visible;
 }
 
 .oval-progress-track {
   fill: none;
   stroke: #555;
-  stroke-width: 5;
+  stroke-width: 3;
 }
 
 .oval-progress-arc {
   fill: none;
   stroke: #00ff00;
-  stroke-width: 6;
+  stroke-width: 4;
   stroke-linecap: round;
-  stroke-dasharray: 680;
-  stroke-dashoffset: 680;
+  stroke-dasharray: 334;
+  stroke-dashoffset: 334;
   animation: ring-fill 2s linear forwards;
   filter: drop-shadow(0 0 6px #00ff00);
 }
 
 @keyframes ring-fill {
-  from { stroke-dashoffset: 680; }
+  from { stroke-dashoffset: 334; }
   to   { stroke-dashoffset: 0; }
 }
 

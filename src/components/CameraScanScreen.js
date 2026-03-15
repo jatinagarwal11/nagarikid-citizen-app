@@ -172,14 +172,14 @@ const CameraScanScreen = ({
           <div className={`oval-guide oval-${ovalState}`}>
             <div className="oval-border" />
             {isScanning && (
-              <svg className="oval-progress-ring" viewBox="0 0 200 250" key={currentStep}>
+              <svg className="oval-progress-ring" viewBox="0 0 100 125" key={currentStep}>
                 <ellipse
                   className="oval-progress-track"
-                  cx="100" cy="125" rx="95" ry="120"
+                  cx="50" cy="62.5" rx="47" ry="59"
                 />
                 <ellipse
                   className="oval-progress-arc"
-                  cx="100" cy="125" rx="95" ry="120"
+                  cx="50" cy="62.5" rx="47" ry="59"
                 />
               </svg>
             )}
