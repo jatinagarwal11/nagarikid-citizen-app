@@ -189,8 +189,6 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
     ctx.textAlign = 'center';
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.lineWidth = 3;
-    const centerX = width / 2;
-    const centerY = height / 2;
     ctx.strokeText(instruction, centerX, height - 30);
     ctx.fillText(instruction, centerX, height - 30);
 
