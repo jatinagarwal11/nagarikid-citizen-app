@@ -8,16 +8,6 @@
   display: flex;
   flex-direction: column;
   color: white;
-  isolation: isolate;
-}
-
-.screen-flash-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  opacity: 0.5;
-  pointer-events: none;
-  transition: background-color 0.2s ease;
 }
 
 .scan-header {
@@ -113,39 +103,40 @@
 }
 
 .oval-scanning .oval-border {
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* ── spinning progress ring (SVG over the oval) ───────── */
+/* ── progress ring: grey track → green fill per step ─── */
 .oval-progress-ring {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: -4px;
+  left: -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
   transform: rotate(-90deg);
   pointer-events: none;
+  z-index: 2;
 }
 
 .oval-progress-track {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.1);
-  stroke-width: 4;
+  stroke: #555;
+  stroke-width: 5;
 }
 
 .oval-progress-arc {
   fill: none;
-  stroke-width: 5;
+  stroke: #00ff00;
+  stroke-width: 6;
   stroke-linecap: round;
-  /* ellipse perimeter ≈ 694 for rx=98, ry=123 */
-  stroke-dasharray: 694;
-  stroke-dashoffset: 694;
-  animation: oval-spin 2s linear forwards;
-  filter: drop-shadow(0 0 6px currentColor);
+  stroke-dasharray: 680;
+  stroke-dashoffset: 680;
+  animation: ring-fill 2s linear forwards;
+  filter: drop-shadow(0 0 6px #00ff00);
 }
 
-@keyframes oval-spin {
-  from { stroke-dashoffset: 694; }
+@keyframes ring-fill {
+  from { stroke-dashoffset: 680; }
   to   { stroke-dashoffset: 0; }
 }
 

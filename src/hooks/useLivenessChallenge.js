@@ -1,87 +1,70 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-const LIVENESS_COLORS = [
-  '#00ffff', // electric cyan
-  '#ff00ff', // hot magenta
+/*
+ * SingPass-style liveness: cycle through 5 neon colours, 2 s each.
+ * Uses requestAnimationFrame + a start timestamp — React can never
+ * kill an interval.  State only updates when the step index changes
+ * (5 re-renders over 10 s).
+ */
+
+const COLORS = [
+  '#00ffff', // cyan
+  '#ff00ff', // magenta
   '#39ff14', // neon green
-  '#ff3300', // neon red-orange
-  '#ffff00', // neon yellow
+  '#ff3300', // red-orange
+  '#ffff00', // yellow
 ];
-
-const LIVENESS_HUES = [180, 300, 90, 0, 60];
-const FLASH_DURATION = 2000; // ms per color
+const STEP_MS = 2000;
 
 export const useLivenessChallenge = (shouldStart) => {
-  const [currentColor, setCurrentColor] = useState(null);
-  const [currentHue, setCurrentHue] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-
-  const intervalRef = useRef(null);
-  const runningRef = useRef(false);
-
-  const cleanup = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    runningRef.current = false;
-    setIsRunning(false);
-    setCurrentColor(null);
-    setCurrentHue(0);
-    setProgress(0);
-    setCurrentStep(0);
-  }, []);
+  const [step, setStep] = useState(-1);
+  const rafRef = useRef(null);
+  const startRef = useRef(0);
+  const lastStepRef = useRef(-1);
 
   useEffect(() => {
     if (!shouldStart) {
-      cleanup();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      startRef.current = 0;
+      lastStepRef.current = -1;
+      setStep(-1);
       return;
     }
 
-    // Already started — don't restart
-    if (runningRef.current) return;
+    startRef.current = performance.now();
+    lastStepRef.current = 0;
+    setStep(0);
 
-    runningRef.current = true;
-    setIsRunning(true);
-    setCurrentStep(0);
-    setProgress(0);
-    setCurrentColor(LIVENESS_COLORS[0]);
-    setCurrentHue(LIVENESS_HUES[0]);
+    const tick = (now) => {
+      const elapsed = now - startRef.current;
+      const s = Math.floor(elapsed / STEP_MS);
 
-    let step = 0;
-    intervalRef.current = setInterval(() => {
-      step++;
-      if (step < LIVENESS_COLORS.length) {
-        setCurrentStep(step);
-        setCurrentColor(LIVENESS_COLORS[step]);
-        setCurrentHue(LIVENESS_HUES[step]);
-        setProgress((step / LIVENESS_COLORS.length) * 100);
-      } else {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        intervalRef.current = null;
-        runningRef.current = false;
-        setIsRunning(false);
-        setProgress(100);
+      if (s !== lastStepRef.current) {
+        lastStepRef.current = s;
+        setStep(s);
       }
-    }, FLASH_DURATION);
+
+      if (s < COLORS.length) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      runningRef.current = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [shouldStart, cleanup]);
+  }, [shouldStart]);
+
+  const isDone = step >= COLORS.length;
+  const idx = isDone ? COLORS.length - 1 : Math.max(0, step);
 
   return {
-    isRunning,
-    currentColor,
-    currentHue,
-    progress,
-    currentStep,
-    totalSteps: LIVENESS_COLORS.length,
+    isRunning: shouldStart && !isDone,
+    isDone: shouldStart && isDone,
+    currentColor: step >= 0 ? COLORS[idx] : null,
+    currentStep: idx,
+    totalSteps: COLORS.length,
   };
 };

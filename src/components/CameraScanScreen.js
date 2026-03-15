@@ -39,9 +39,8 @@ const CameraScanScreen = ({
 
   const {
     isRunning: livenessRunning,
+    isDone: livenessDone,
     currentColor,
-    currentHue,
-    progress: livenessProgress,
     currentStep,
   } = useLivenessChallenge(state === 'scanning');
   const isScanning = state === 'scanning';
@@ -89,10 +88,10 @@ const CameraScanScreen = ({
 
   // Handle liveness completion
   useEffect(() => {
-    if (state === 'scanning' && !livenessRunning && livenessProgress === 100) {
+    if (state === 'scanning' && livenessDone) {
       onLivenessComplete();
     }
-  }, [state, livenessRunning, livenessProgress, onLivenessComplete]);
+  }, [state, livenessDone, onLivenessComplete]);
 
   // Update UI based on current state
   useEffect(() => {
@@ -152,7 +151,10 @@ const CameraScanScreen = ({
         <h1 className="scan-title">Face ID Verification</h1>
       </div>
 
-      <div className="camera-container">
+      <div
+        className="camera-container"
+        style={isScanning && currentColor ? { backgroundColor: currentColor, transition: 'background-color 0.15s ease' } : undefined}
+      >
         <video
           ref={videoRef}
           className="camera-video"
@@ -160,8 +162,8 @@ const CameraScanScreen = ({
           muted
           onLoadedMetadata={handleVideoLoaded}
           style={isScanning ? {
-            filter: `hue-rotate(${currentHue}deg) saturate(3) brightness(1.4) contrast(1.3)`,
-            transition: 'filter 0.25s ease',
+            filter: 'grayscale(1) contrast(3) brightness(1.4)',
+            mixBlendMode: 'screen',
           } : undefined}
         />
         <canvas ref={canvasRef} className="camera-canvas" />
@@ -169,16 +171,15 @@ const CameraScanScreen = ({
         <div className="camera-overlay" ref={overlayRef}>
           <div className={`oval-guide oval-${ovalState}`}>
             <div className="oval-border" />
-            {isScanning && currentColor && (
+            {isScanning && (
               <svg className="oval-progress-ring" viewBox="0 0 200 250" key={currentStep}>
                 <ellipse
                   className="oval-progress-track"
-                  cx="100" cy="125" rx="98" ry="123"
+                  cx="100" cy="125" rx="95" ry="120"
                 />
                 <ellipse
                   className="oval-progress-arc"
-                  cx="100" cy="125" rx="98" ry="123"
-                  style={{ stroke: currentColor }}
+                  cx="100" cy="125" rx="95" ry="120"
                 />
               </svg>
             )}
@@ -196,13 +197,6 @@ const CameraScanScreen = ({
           Make sure your face is clearly visible and well lit
         </p>
       </div>
-
-      {isScanning && (
-        <div
-          className="screen-flash-overlay"
-          style={{ backgroundColor: currentColor }}
-        />
-      )}
     </div>
   );
 };
