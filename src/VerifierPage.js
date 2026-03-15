@@ -117,6 +117,7 @@ function KYCResult({ data, decision, reason }) {
 /* ── Pharmacy Result ─────────────────────────────────── */
 function PharmacyResult({ data, decision, reason }) {
   const approved = decision === 'approved';
+  const drugs = data.allowed_drugs || [];
   return (
     <div className={`verify-result-card ${approved ? 'result-approved' : 'result-denied'}`}>
       <div className="result-header">
@@ -131,10 +132,25 @@ function PharmacyResult({ data, decision, reason }) {
           <div><dt>Age</dt><dd>{data.age}</dd></div>
           <div><dt>Prescription</dt><dd>{data.prescription_status}</dd></div>
           <div><dt>Expiry</dt><dd>{data.prescription_expiry || '—'}</dd></div>
-          <div><dt>Restricted Eligible</dt><dd>{data.restricted_drug_eligible ? 'Yes' : 'No'}</dd></div>
           <div><dt>Doctor Auth</dt><dd>{data.doctor_authorization || '—'}</dd></div>
           <div><dt>Recent Purchase Flag</dt><dd>{data.recent_drug_flag ? '⚠ Yes' : 'No'}</dd></div>
         </dl>
+      </div>
+      <div className="result-section">
+        <h4>Authorised Drugs</h4>
+        {drugs.length > 0 ? (
+          <ul className="drug-permit-list">
+            {drugs.map((d, i) => (
+              <li key={i} className="drug-permit-item drug-approved">
+                <span className="drug-icon">💊</span>
+                <span className="drug-name">{d.name}</span>
+                <span className="drug-schedule">Schedule {d.schedule}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="drug-none">No restricted drugs authorised for this patient.</p>
+        )}
       </div>
     </div>
   );

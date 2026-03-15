@@ -943,6 +943,45 @@
   text-align: right;
 }
 
+/* ── Drug permit list ──────────────────── */
+.drug-permit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.drug-permit-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.drug-permit-item.drug-approved {
+  border-left: 4px solid #059669;
+}
+.drug-icon { font-size: 1.25rem; }
+.drug-name {
+  font-weight: 600;
+  flex: 1;
+}
+.drug-schedule {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  background: var(--secondary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+.drug-none {
+  color: var(--muted-foreground);
+  font-style: italic;
+  margin: 0;
+}
+
 /* ── Age verification big card ─────────── */
 .age-result {
   text-align: center;

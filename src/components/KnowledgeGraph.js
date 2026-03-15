@@ -13,7 +13,7 @@ const LABELS = {
   identity: 'Identity',
   kyc: 'KYC',
   address: 'Address',
-  prescriptions: 'Rx',
+  prescriptions: '💊',
   vehicles: 'Vehicles',
   audit: 'Audit',
 };
