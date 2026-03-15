@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import QRCode from 'qrcode';
 import FaceVerificationPage from './FaceVerificationPage';
 import VerifierPage from './VerifierPage';
+import AdminPage from './AdminPage';
+import KnowledgeGraph from './components/KnowledgeGraph';
+import AuditTrail from './components/AuditTrail';
 import './App.css';
 
 const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
@@ -9,7 +12,7 @@ const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 /* ────────────────────────────────────────────────────────
    Landing Page
    ──────────────────────────────────────────────────────── */
-function LandingPage({ onSelectCitizen, onSelectVerifier }) {
+function LandingPage({ onSelectCitizen, onSelectVerifier, onSelectAdmin }) {
   return (
     <div className="landing">
       <div className="landing-inner">
@@ -19,7 +22,7 @@ function LandingPage({ onSelectCitizen, onSelectVerifier }) {
           <p className="landing-subtitle">Nepal's digital identity platform</p>
         </div>
 
-        <div className="landing-cards">
+        <div className="landing-cards landing-cards-3">
           <button className="role-card" onClick={onSelectCitizen}>
             <div className="role-icon">
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -28,7 +31,7 @@ function LandingPage({ onSelectCitizen, onSelectVerifier }) {
               </svg>
             </div>
             <h2 className="role-name">Nagarik</h2>
-            <p className="role-desc">Access your digital identity, generate QR codes, and manage your profile</p>
+            <p className="role-desc">Access your digital identity, manage your profile, and view who accessed your data</p>
             <span className="role-action">Continue →</span>
           </button>
 
@@ -40,7 +43,18 @@ function LandingPage({ onSelectCitizen, onSelectVerifier }) {
               </svg>
             </div>
             <h2 className="role-name">Verifier</h2>
-            <p className="role-desc">Scan and verify citizen QR codes for identity authentication</p>
+            <p className="role-desc">Verify citizen identity for KYC, pharmacy, or age-gated services</p>
+            <span className="role-action">Continue →</span>
+          </button>
+
+          <button className="role-card" onClick={onSelectAdmin}>
+            <div className="role-icon">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <h2 className="role-name">Government</h2>
+            <p className="role-desc">Admin portal — citizen lookup, audit trails, and suspicious activity</p>
             <span className="role-action">Continue →</span>
           </button>
         </div>
@@ -63,6 +77,9 @@ function CitizenFlow({ onBack }) {
   const [registrationStep, setRegistrationStep] = useState('scan');
   const [scannedData, setScannedData] = useState(null);
   const [faceIdVerified, setFaceIdVerified] = useState(false);
+  const [activeTab, setActiveTab] = useState('identity');
+  const [graphData, setGraphData] = useState(null);
+  const [auditData, setAuditData] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -169,6 +186,17 @@ function CitizenFlow({ onBack }) {
     return () => clearInterval(interval);
   }, [loggedIn, loadUser]);
 
+  // Load knowledge graph + audit trail when logged in
+  useEffect(() => {
+    if (!loggedIn) return;
+    const token = localStorage.getItem('token');
+    const h = { Authorization: `Bearer ${token}` };
+    fetch(`${API_BASE}/citizen/knowledge-graph`, { headers: h })
+      .then(r => r.json()).then(setGraphData).catch(() => {});
+    fetch(`${API_BASE}/citizen/audit-trail`, { headers: h })
+      .then(r => r.json()).then(setAuditData).catch(() => {});
+  }, [loggedIn]);
+
   useEffect(() => {
     if (showRegister && registrationStep === 'scan') startCamera();
   }, [showRegister, registrationStep]);
@@ -268,20 +296,45 @@ function CitizenFlow({ onBack }) {
   return (
     <div className="dashboard">
       <div className="page-header">
-        <button className="back-link" onClick={() => { setLoggedIn(false); setUser(null); localStorage.removeItem('token'); }}>
+        <button className="back-link" onClick={() => { setLoggedIn(false); setUser(null); setActiveTab('identity'); localStorage.removeItem('token'); }}>
           Sign Out
         </button>
       </div>
-      <div className="id-card">
-        <img src={user.photo_url || 'https://via.placeholder.com/100'} alt="User" className="id-photo" />
-        <h2>{user.name}</h2>
-        <p className="id-meta">National ID: {user.national_id}</p>
-        <p className="id-meta">DOB: {user.dob}</p>
-        <div className="qr-section">
-          <img src={qrData} alt="QR Code" className="qr-img" />
-          <p className="qr-timer">Refreshes in {countdown}s</p>
-        </div>
+
+      <div className="dashboard-tabs">
+        <button className={`tab ${activeTab === 'identity' ? 'active' : ''}`} onClick={() => setActiveTab('identity')}>My Identity</button>
+        <button className={`tab ${activeTab === 'graph' ? 'active' : ''}`} onClick={() => setActiveTab('graph')}>Data Connections</button>
+        <button className={`tab ${activeTab === 'audit' ? 'active' : ''}`} onClick={() => setActiveTab('audit')}>Access History</button>
       </div>
+
+      {activeTab === 'identity' && (
+        <div className="id-card">
+          <img src={user.photo_url || 'https://via.placeholder.com/100'} alt="User" className="id-photo" />
+          <h2>{user.name}</h2>
+          <p className="id-meta">National ID: {user.national_id}</p>
+          <p className="id-meta">DOB: {user.dob}</p>
+          <div className="qr-section">
+            <img src={qrData} alt="QR Code" className="qr-img" />
+            <p className="qr-timer">Refreshes in {countdown}s</p>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'graph' && (
+        <div className="dash-section">
+          <h2 className="dash-section-title">My Data Connections</h2>
+          <p className="dash-section-sub">Your government-linked identity graph</p>
+          <KnowledgeGraph data={graphData} />
+        </div>
+      )}
+
+      {activeTab === 'audit' && (
+        <div className="dash-section">
+          <h2 className="dash-section-title">My Access History</h2>
+          <p className="dash-section-sub">Every time an organisation accessed your data</p>
+          <AuditTrail entries={auditData} mode="citizen" />
+        </div>
+      )}
     </div>
   );
 }
@@ -294,11 +347,13 @@ function App() {
 
   if (view === 'citizen') return <CitizenFlow onBack={() => setView('landing')} />;
   if (view === 'verifier') return <VerifierPage onBack={() => setView('landing')} />;
+  if (view === 'admin') return <AdminPage onBack={() => setView('landing')} />;
 
   return (
     <LandingPage
       onSelectCitizen={() => setView('citizen')}
       onSelectVerifier={() => setView('verifier')}
+      onSelectAdmin={() => setView('admin')}
     />
   );
 }
