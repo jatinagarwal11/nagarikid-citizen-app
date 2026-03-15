@@ -1,11 +1,7 @@
 import React from 'react';
 import './ReadyScreen.css';
 
-interface ReadyScreenProps {
-  onBeginScan: () => void;
-}
-
-const ReadyScreen: React.FC<ReadyScreenProps> = ({ onBeginScan }) => {
+const ReadyScreen = ({ onBeginScan }) => {
   return (
     <div className="ready-screen">
       <div className="ready-content">

@@ -10,14 +10,14 @@ const LIVENESS_COLORS = [
 
 const FLASH_DURATION = 350; // ms per color
 
-export const useLivenessChallenge = (shouldStart: boolean) => {
+export const useLivenessChallenge = (shouldStart) => {
   const [isRunning, setIsRunning] = useState(false);
   const [currentColor, setCurrentColor] = useState('#0066cc');
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
 
-  const intervalRef = useRef<number>();
-  const startTimeRef = useRef<number>(0);
+  const intervalRef = useRef();
+  const startTimeRef = useRef(0);
   const totalDuration = LIVENESS_COLORS.length * FLASH_DURATION;
 
   const startChallenge = useCallback(() => {

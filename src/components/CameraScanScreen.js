@@ -1,21 +1,10 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { VerificationState } from '../FaceVerificationPage';
-import { useCameraStream, useFaceTracking, useLivenessChallenge } from '../hooks';
+import { useCameraStream } from '../hooks/useCameraStream';
+import { useFaceTracking } from '../hooks/useFaceTracking';
+import { useLivenessChallenge } from '../hooks/useLivenessChallenge';
 import './CameraScanScreen.css';
 
-interface CameraScanScreenProps {
-  state: VerificationState;
-  onPermissionGranted: () => void;
-  onPermissionDenied: () => void;
-  onFaceDetected: () => void;
-  onFaceLost: () => void;
-  onFaceAligned: () => void;
-  onStartLiveness: () => void;
-  onLivenessComplete: () => void;
-  onLivenessFailed: () => void;
-}
-
-const CameraScanScreen: React.FC<CameraScanScreenProps> = ({
+const CameraScanScreen = ({
   state,
   onPermissionGranted,
   onPermissionDenied,
@@ -26,12 +15,12 @@ const CameraScanScreen: React.FC<CameraScanScreenProps> = ({
   onLivenessComplete,
   onLivenessFailed,
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const overlayRef = useRef(null);
 
   const [currentPrompt, setCurrentPrompt] = useState('Initializing camera...');
-  const [ovalState, setOvalState] = useState<'grey' | 'amber' | 'blue' | 'scanning'>('grey');
+  const [ovalState, setOvalState] = useState('grey');
 
   const { stream, error: cameraError } = useCameraStream(state === 'requesting_permission');
 

@@ -1,21 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-interface FacePosition {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export const useFaceTracking = (stream: MediaStream | null, isActive: boolean) => {
+export const useFaceTracking = (stream, isActive) => {
   const [faceDetected, setFaceDetected] = useState(false);
-  const [facePosition, setFacePosition] = useState<FacePosition>({ x: 0, y: 0, width: 0, height: 0 });
+  const [facePosition, setFacePosition] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [faceAligned, setFaceAligned] = useState(false);
   const [alignmentPrompt, setAlignmentPrompt] = useState('Move closer');
 
-  const animationFrameRef = useRef<number>();
-  const lastFaceTimeRef = useRef<number>(0);
-  const stableStartTimeRef = useRef<number>(0);
+  const animationFrameRef = useRef();
+  const lastFaceTimeRef = useRef(0);
+  const stableStartTimeRef = useRef(0);
 
   // Simplified face detection simulation
   // In a real implementation, this would use MediaPipe Face Mesh

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 
-export const useCameraStream = (shouldRequest: boolean) => {
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+export const useCameraStream = (shouldRequest) => {
+  const [stream, setStream] = useState(null);
+  const [error, setError] = useState(null);
+  const streamRef = useRef(null);
 
   useEffect(() => {
     if (!shouldRequest) return;

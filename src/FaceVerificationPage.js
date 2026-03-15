@@ -1,24 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { ReadyScreen, CameraScanScreen } from './components';
+import ReadyScreen from './components/ReadyScreen';
+import CameraScanScreen from './components/CameraScanScreen';
 import './FaceVerification.css';
 
-export type VerificationState =
-  | 'ready'
-  | 'requesting_permission'
-  | 'camera_loading'
-  | 'no_face'
-  | 'aligning'
-  | 'ready_to_scan'
-  | 'scanning'
-  | 'success'
-  | 'failed';
-
-interface FaceVerificationPageProps {
-  onBack?: () => void;
-}
-
-const FaceVerificationPage: React.FC<FaceVerificationPageProps> = ({ onBack }) => {
-  const [state, setState] = useState<VerificationState>('ready');
+const FaceVerificationPage = ({ onBack }) => {
+  const [state, setState] = useState('ready');
 
   const handleBeginScan = useCallback(() => {
     setState('requesting_permission');
