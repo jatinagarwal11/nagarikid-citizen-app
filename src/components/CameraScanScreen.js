@@ -26,7 +26,6 @@ const CameraScanScreen = ({
 
   const {
     faceDetected,
-    facePosition,
     faceAligned,
     alignmentPrompt,
   } = useFaceTracking(stream, state !== 'ready' && state !== 'requesting_permission' && state !== 'failed');
@@ -34,7 +33,6 @@ const CameraScanScreen = ({
   const {
     isRunning: livenessRunning,
     currentColor,
-    progress,
   } = useLivenessChallenge(state === 'scanning');
 
   // Handle camera permission and setup
@@ -102,6 +100,8 @@ const CameraScanScreen = ({
       case 'scanning':
         setCurrentPrompt('Hold still while we scan');
         setOvalState('scanning');
+        break;
+      default:
         break;
     }
   }, [state, alignmentPrompt]);

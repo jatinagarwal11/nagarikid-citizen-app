@@ -18,7 +18,6 @@ export const useLivenessChallenge = (shouldStart) => {
 
   const intervalRef = useRef();
   const startTimeRef = useRef(0);
-  const totalDuration = LIVENESS_COLORS.length * FLASH_DURATION;
 
   const startChallenge = useCallback(() => {
     setIsRunning(true);
