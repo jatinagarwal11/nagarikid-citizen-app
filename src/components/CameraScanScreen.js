@@ -41,6 +41,7 @@ const CameraScanScreen = ({
     isRunning: livenessRunning,
     currentColor,
   } = useLivenessChallenge(state === 'scanning');
+  const isScanning = state === 'scanning';
 
   // Handle camera permission and setup
   useEffect(() => {
@@ -78,7 +79,7 @@ const CameraScanScreen = ({
     if (state === 'ready_to_scan' && !livenessRunning) {
       const timer = setTimeout(() => {
         onStartLiveness();
-      }, 1000); // Wait 1 second for stability
+      }, 350);
       return () => clearTimeout(timer);
     }
   }, [state, livenessRunning, onStartLiveness]);
@@ -144,6 +145,13 @@ const CameraScanScreen = ({
 
   return (
     <div className="camera-scan-screen">
+      {isScanning && (
+        <div
+          className="screen-flash-overlay"
+          style={{ backgroundColor: currentColor }}
+        />
+      )}
+
       <div className="scan-header">
         <h1 className="scan-title">Face ID Verification</h1>
       </div>
@@ -155,8 +163,15 @@ const CameraScanScreen = ({
           playsInline
           muted
           onLoadedMetadata={handleVideoLoaded}
+          style={isScanning ? { filter: 'saturate(1.15) contrast(1.1) brightness(1.05)' } : undefined}
         />
         <canvas ref={canvasRef} className="camera-canvas" />
+        {isScanning && (
+          <div
+            className="camera-feed-tint"
+            style={{ backgroundColor: currentColor }}
+          />
+        )}
 
         <div className="camera-overlay" ref={overlayRef}>
           <div className={`oval-guide oval-${ovalState}`}>
@@ -167,15 +182,6 @@ const CameraScanScreen = ({
             <div className="prompt-text">{currentPrompt}</div>
           </div>
 
-          {state === 'scanning' && (
-            <div
-              className="liveness-overlay"
-              style={{
-                backgroundColor: currentColor,
-                opacity: 0.3,
-              }}
-            />
-          )}
         </div>
       </div>
 
