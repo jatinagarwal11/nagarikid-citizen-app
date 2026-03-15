@@ -6,27 +6,40 @@ const TYPE_LABELS = {
   age_verification: 'Age Check',
 };
 
-/* Simulated suspicious entry for demo */
-const SUSPICIOUS_ENTRY = {
-  id: 'sim-suspicious-001',
-  timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  verifier_user: 'PAN002',
-  verifier_organizations: { company_name: 'Manakamana Pharmacy', company_pan: 'PAN002' },
-  business_type: 'pharmacy',
-  purpose: 'Restricted drug purchase — Ritalin (Methylphenidate)',
-  fields_accessed: ['prescription_status', 'allowed_drugs', 'recent_drug_purchase_date'],
-  decision: 'approved',
-  is_suspicious: true,
-  _sim_note: 'SIMULATED: Same citizen requested Schedule II restricted drugs (Ritalin) at two different pharmacies (Himalayan Pharma and Manakamana Pharmacy) within 3 hours. This pattern may indicate prescription shopping or drug diversion. In a production system, this would trigger an automated flag for the National Drug Regulatory Authority.',
-};
+/* Simulated suspicious entries for demo — prescription shopping pattern */
+const SUSPICIOUS_ENTRIES = [
+  {
+    id: 'sim-suspicious-001',
+    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    verifier_user: 'PAN002',
+    verifier_organizations: { company_name: 'Himalayan Pharma', company_pan: 'PAN002' },
+    business_type: 'pharmacy',
+    purpose: 'Restricted drug purchase — Ritalin (Methylphenidate)',
+    fields_accessed: ['prescription_status', 'allowed_drugs', 'recent_drug_purchase_date'],
+    decision: 'approved',
+    is_suspicious: true,
+    _sim_note: 'SIMULATED: This is the first of two pharmacy visits within a short time frame. The citizen purchased Schedule II controlled substance Ritalin (Methylphenidate) from Himalayan Pharma. By itself this transaction is valid, but when combined with the subsequent visit to Manakamana Pharmacy 3 hours later, it forms a prescription shopping pattern that would trigger an automated flag.',
+  },
+  {
+    id: 'sim-suspicious-002',
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    verifier_user: 'PAN002',
+    verifier_organizations: { company_name: 'Manakamana Pharmacy', company_pan: 'PAN002' },
+    business_type: 'pharmacy',
+    purpose: 'Restricted drug purchase — Ritalin (Methylphenidate)',
+    fields_accessed: ['prescription_status', 'allowed_drugs', 'recent_drug_purchase_date'],
+    decision: 'approved',
+    is_suspicious: true,
+    _sim_note: 'SIMULATED: Same citizen requested Schedule II restricted drugs (Ritalin) at a second pharmacy (Manakamana Pharmacy) only 3 hours after purchasing from Himalayan Pharma. This pattern is consistent with prescription shopping or drug diversion. In a production system, this would trigger an automated flag for the National Drug Regulatory Authority and block the transaction pending manual review.',
+  },
+];
 
 function AuditTrail({ entries, mode }) {
   const [expandedId, setExpandedId] = useState(null);
 
-  /* Inject simulated suspicious entry at the top */
-  const allEntries = entries && entries.length
-    ? [SUSPICIOUS_ENTRY, ...entries]
-    : entries;
+  /* Always inject simulated suspicious entries at the top */
+  const realEntries = Array.isArray(entries) ? entries : [];
+  const allEntries = [...SUSPICIOUS_ENTRIES, ...realEntries];
   if (!allEntries || !allEntries.length) {
     return <p className="audit-empty">No access events recorded yet.</p>;
   }
