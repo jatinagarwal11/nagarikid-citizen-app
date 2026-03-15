@@ -7,10 +7,10 @@ const ReadyScreen = ({ onBeginScan }) => {
       <div className="ready-content">
         <div className="project-name">NagarikID</div>
 
-        <h1 className="title">Face Verification</h1>
+        <h1 className="title">Face ID Verification</h1>
 
         <p className="subtitle">
-          Use your front camera to verify that you are present.
+          Use your front camera to match your face with your registered identity.
         </p>
 
         <div className="instructions">

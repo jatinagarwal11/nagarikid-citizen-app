@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import QRCode from 'qrcode';
-import { LivenessDetector } from './LivenessDetector';
 import FaceVerificationPage from './FaceVerificationPage';
 import './App.css';
 
@@ -10,9 +9,9 @@ function App() {
   const [qrData, setQrData] = useState('');
   const [countdown, setCountdown] = useState(5);
   const [showRegister, setShowRegister] = useState(false);
-  const [registrationStep, setRegistrationStep] = useState('scan'); // scan, verify, face_verify, form
+  const [registrationStep, setRegistrationStep] = useState('scan'); // scan, verify, face_id_verify, form
   const [scannedData, setScannedData] = useState(null);
-  const [livenessVerified, setLivenessVerified] = useState(false);
+  const [faceIdVerified, setFaceIdVerified] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
@@ -129,26 +128,12 @@ function App() {
     }
   };
 
-  const performLivenessCheck = () => {
-    setRegistrationStep('face_verify');
-  };
-
-  const handleLivenessComplete = (result) => {
-    if (result.passed) {
-      setLivenessVerified(true);
-      setRegistrationStep('form');
-    } else {
-      alert('Liveness verification failed. Please try again.');
-      setRegistrationStep('verify');
-    }
-  };
-
-  const handleLivenessCancel = () => {
-    setRegistrationStep('verify');
+  const startFaceIdVerification = () => {
+    setRegistrationStep('face_id_verify');
   };
 
   const handleFaceVerificationSuccess = () => {
-    setLivenessVerified(true);
+    setFaceIdVerified(true);
     setRegistrationStep('form');
   };
 
@@ -175,7 +160,7 @@ function App() {
       setShowRegister(false);
       setRegistrationStep('scan');
       setScannedData(null);
-      setLivenessVerified(false);
+      setFaceIdVerified(false);
     } catch (error) {
       console.error('Registration error:', error);
       alert('Registration failed: ' + error.message);
@@ -233,23 +218,14 @@ function App() {
                 <p><strong>Name:</strong> {scannedData.name}</p>
                 <p><strong>Date of Birth:</strong> {scannedData.dob}</p>
               </div>
-              <p>Now we need to verify you're a real person.</p>
-              <button onClick={performLivenessCheck}>Start Liveness Check</button>
+              <p>Now we need to verify that your face matches your registered identity.</p>
+              <button onClick={startFaceIdVerification}>Start Face ID Verification</button>
               <br />
               <button onClick={() => setRegistrationStep('scan')}>Rescan ID</button>
             </div>
           )}
-          
-          {registrationStep === 'liveness' && (
-            <div className="liveness-step">
-              <LivenessDetector 
-                onComplete={handleLivenessComplete}
-                onCancel={handleLivenessCancel}
-              />
-            </div>
-          )}
 
-          {registrationStep === 'face_verify' && (
+          {registrationStep === 'face_id_verify' && (
             <div className="liveness-step">
               <FaceVerificationPage
                 onBack={() => setRegistrationStep('verify')}
@@ -258,10 +234,10 @@ function App() {
             </div>
           )}
           
-          {registrationStep === 'form' && scannedData && livenessVerified && (
+          {registrationStep === 'form' && scannedData && faceIdVerified && (
             <div className="form-step">
               <h2>Step 3: Create Account</h2>
-              <p>Liveness verification successful! Create your password.</p>
+              <p>Face ID verification successful. Create your password.</p>
               <input id="reg-password" type="password" placeholder="Create Password" />
               <br />
               <button onClick={() => registerUser(document.getElementById('reg-password').value)}>Complete Registration</button>

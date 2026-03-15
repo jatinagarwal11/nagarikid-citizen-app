@@ -81,8 +81,8 @@ const FaceVerificationPage = ({ onBack, onSuccess }) => {
         <div className="verification-result success">
           <div className="result-content">
             <div className="result-icon">✓</div>
-            <h2>Verification Complete</h2>
-            <p>Your face has been successfully verified.</p>
+            <h2>Face ID Verification Complete</h2>
+            <p>Your face has been successfully matched with your identity.</p>
             <div className="result-buttons">
               {onSuccess && (
                 <button className="retry-button" onClick={onSuccess}>
@@ -106,8 +106,8 @@ const FaceVerificationPage = ({ onBack, onSuccess }) => {
         <div className="verification-result failed">
           <div className="result-content">
             <div className="result-icon">✗</div>
-            <h2>Verification Failed</h2>
-            <p>We couldn't verify your face. Please try again.</p>
+            <h2>Face ID Verification Failed</h2>
+            <p>We couldn't match your face with your identity. Please try again.</p>
             <div className="result-buttons">
               <button className="retry-button" onClick={handleRetry}>
                 Try Again

@@ -140,7 +140,7 @@ const CameraScanScreen = ({
   return (
     <div className="camera-scan-screen">
       <div className="scan-header">
-        <h1 className="scan-title">Face Verification</h1>
+        <h1 className="scan-title">Face ID Verification</h1>
       </div>
 
       <div className="camera-container">
