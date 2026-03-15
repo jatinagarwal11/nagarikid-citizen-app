@@ -154,7 +154,7 @@ function App() {
         throw new Error(`Registration failed: ${res.status}`);
       }
       
-      const data = await res.json();
+      await res.json(); // Parse response but don't store since we don't use it
       alert('Registration successful! You can now login.');
       setShowRegister(false);
       setRegistrationStep('scan');
