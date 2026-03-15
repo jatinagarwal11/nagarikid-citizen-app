@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import QRCode from 'qrcode';
 import './App.css';
 
@@ -7,6 +7,12 @@ function App() {
   const [user, setUser] = useState(null);
   const [qrData, setQrData] = useState('');
   const [countdown, setCountdown] = useState(5);
+  const [showRegister, setShowRegister] = useState(false);
+  const [registrationStep, setRegistrationStep] = useState('scan'); // scan, verify, form
+  const [scannedData, setScannedData] = useState(null);
+  const [livenessVerified, setLivenessVerified] = useState(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 
   const login = async (national_id, password) => {
@@ -81,6 +87,85 @@ function App() {
     setQrData(qrUrl);
   };
 
+  // Registration functions
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('Camera access denied. Please allow camera access to scan your ID.');
+    }
+  };
+
+  const captureImage = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      
+      // Fake OCR - in real implementation, this would call an OCR service
+      const fakeOCRData = {
+        national_id: '123456789', // This would be extracted from OCR
+        name: 'John Doe', // This would be extracted from OCR
+        dob: '1990-01-01' // This would be extracted from OCR
+      };
+      
+      setScannedData(fakeOCRData);
+      setRegistrationStep('verify');
+      
+      // Stop camera
+      const stream = video.srcObject;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    }
+  };
+
+  const performLivenessCheck = () => {
+    // Fake liveness detection - in real implementation, this would use computer vision
+    alert('Performing liveness detection... (This is faked for MVP)');
+    setTimeout(() => {
+      setLivenessVerified(true);
+      setRegistrationStep('form');
+    }, 2000);
+  };
+
+  const registerUser = async (password) => {
+    try {
+      const res = await fetch(`${API_BASE}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          national_id: scannedData.national_id,
+          name: scannedData.name,
+          dob: scannedData.dob,
+          photo_url: 'https://via.placeholder.com/100', // In real app, this would be from the ID card
+          password
+        })
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Registration failed: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      alert('Registration successful! You can now login.');
+      setShowRegister(false);
+      setRegistrationStep('scan');
+      setScannedData(null);
+      setLivenessVerified(false);
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Registration failed: ' + error.message);
+    }
+  };
+
   useEffect(() => {
     if (loggedIn) {
       loadUser(); // Load user data immediately when logged in
@@ -97,15 +182,74 @@ function App() {
     }
   }, [loggedIn, loadUser]);
 
+  useEffect(() => {
+    if (showRegister && registrationStep === 'scan') {
+      startCamera();
+    }
+  }, [showRegister, registrationStep]);
+
   if (!loggedIn) {
-    return (
-      <div className="login">
-        <h1>NagarikID</h1>
-        <input id="national_id" placeholder="National ID" />
-        <input id="password" type="password" placeholder="Password" />
-        <button onClick={() => login(document.getElementById('national_id').value, document.getElementById('password').value)}>Login</button>
-      </div>
-    );
+    if (showRegister) {
+      // Registration flow
+      return (
+        <div className="register">
+          <h1>NagarikID Registration</h1>
+          
+          {registrationStep === 'scan' && (
+            <div className="scan-step">
+              <h2>Step 1: Scan Your National ID Card</h2>
+              <p>Position your National ID card in front of the camera.</p>
+              <video ref={videoRef} autoPlay playsInline style={{ width: '100%', maxWidth: '400px' }} />
+              <canvas ref={canvasRef} style={{ display: 'none' }} />
+              <br />
+              <button onClick={captureImage}>Capture ID Card</button>
+              <br />
+              <button onClick={() => setShowRegister(false)}>Back to Login</button>
+            </div>
+          )}
+          
+          {registrationStep === 'verify' && scannedData && (
+            <div className="verify-step">
+              <h2>Step 2: Verify Identity</h2>
+              <p>Extracted Information:</p>
+              <div className="extracted-data">
+                <p><strong>National ID:</strong> {scannedData.national_id}</p>
+                <p><strong>Name:</strong> {scannedData.name}</p>
+                <p><strong>Date of Birth:</strong> {scannedData.dob}</p>
+              </div>
+              <p>Now we need to verify you're a real person.</p>
+              <button onClick={performLivenessCheck}>Start Liveness Check</button>
+              <br />
+              <button onClick={() => setRegistrationStep('scan')}>Rescan ID</button>
+            </div>
+          )}
+          
+          {registrationStep === 'form' && scannedData && livenessVerified && (
+            <div className="form-step">
+              <h2>Step 3: Create Account</h2>
+              <p>Liveness verification successful! Create your password.</p>
+              <input id="reg-password" type="password" placeholder="Create Password" />
+              <br />
+              <button onClick={() => registerUser(document.getElementById('reg-password').value)}>Complete Registration</button>
+              <br />
+              <button onClick={() => setRegistrationStep('verify')}>Back</button>
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      // Login form
+      return (
+        <div className="login">
+          <h1>NagarikID</h1>
+          <input id="national_id" placeholder="National ID" />
+          <input id="password" type="password" placeholder="Password" />
+          <button onClick={() => login(document.getElementById('national_id').value, document.getElementById('password').value)}>Login</button>
+          <br />
+          <button onClick={() => setShowRegister(true)}>Register New Account</button>
+        </div>
+      );
+    }
   }
 
   // Show loading while user data is being fetched
