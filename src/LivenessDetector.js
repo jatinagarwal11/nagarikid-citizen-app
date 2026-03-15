@@ -9,7 +9,6 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
   const canvasRef = useRef(null);
   const faceMeshRef = useRef(null);
   const cameraRef = useRef(null);
-  const animationFrameRef = useRef(null);
 
   // State management
   const [state, setState] = useState('requesting_permission'); // idle, requesting_permission, aligning, ready, challenge_running, analyzing, success, failed
@@ -216,17 +215,13 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
       if (cameraRef.current) {
         cameraRef.current.stop();
       }
-      const currentAnimationFrame = animationFrameRef.current;
-      if (currentAnimationFrame) {
-        cancelAnimationFrame(currentAnimationFrame);
-      }
       if (stabilityTimerRef.current) {
         clearTimeout(stabilityTimerRef.current);
       }
     };
   }, [initializeCamera]);
 
-  const analyzeResults = () => {
+  const analyzeResults = useCallback(() => {
     setState('analyzing');
     setInstruction('Analyzing...');
 
@@ -286,7 +281,7 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
         }, 2000);
       }
     }, 1000);
-  };
+  }, [metrics, challengeColors.length, alignment.stable, onComplete]);
 
   const startChallenge = useCallback(() => {
     setState('challenge_running');
