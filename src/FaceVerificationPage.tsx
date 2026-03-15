@@ -1,0 +1,131 @@
+import React, { useState, useCallback } from 'react';
+import { ReadyScreen, CameraScanScreen } from './components';
+import './FaceVerification.css';
+
+export type VerificationState =
+  | 'ready'
+  | 'requesting_permission'
+  | 'camera_loading'
+  | 'no_face'
+  | 'aligning'
+  | 'ready_to_scan'
+  | 'scanning'
+  | 'success'
+  | 'failed';
+
+interface FaceVerificationPageProps {
+  onBack?: () => void;
+}
+
+const FaceVerificationPage: React.FC<FaceVerificationPageProps> = ({ onBack }) => {
+  const [state, setState] = useState<VerificationState>('ready');
+
+  const handleBeginScan = useCallback(() => {
+    setState('requesting_permission');
+  }, []);
+
+  const handlePermissionGranted = useCallback(() => {
+    setState('camera_loading');
+  }, []);
+
+  const handlePermissionDenied = useCallback(() => {
+    setState('failed');
+  }, []);
+
+  const handleFaceDetected = useCallback(() => {
+    setState('aligning');
+  }, []);
+
+  const handleFaceLost = useCallback(() => {
+    setState('no_face');
+  }, []);
+
+  const handleFaceAligned = useCallback(() => {
+    setState('ready_to_scan');
+  }, []);
+
+  const handleStartLiveness = useCallback(() => {
+    setState('scanning');
+  }, []);
+
+  const handleLivenessComplete = useCallback(() => {
+    setState('success');
+  }, []);
+
+  const handleLivenessFailed = useCallback(() => {
+    setState('failed');
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    setState('ready');
+  }, []);
+
+  return (
+    <div className="face-verification-page">
+      {state === 'ready' && (
+        <ReadyScreen onBeginScan={handleBeginScan} />
+      )}
+
+      {(state === 'requesting_permission' ||
+        state === 'camera_loading' ||
+        state === 'no_face' ||
+        state === 'aligning' ||
+        state === 'ready_to_scan' ||
+        state === 'scanning') && (
+        <CameraScanScreen
+          state={state}
+          onPermissionGranted={handlePermissionGranted}
+          onPermissionDenied={handlePermissionDenied}
+          onFaceDetected={handleFaceDetected}
+          onFaceLost={handleFaceLost}
+          onFaceAligned={handleFaceAligned}
+          onStartLiveness={handleStartLiveness}
+          onLivenessComplete={handleLivenessComplete}
+          onLivenessFailed={handleLivenessFailed}
+        />
+      )}
+
+      {state === 'success' && (
+        <div className="verification-result success">
+          <div className="result-content">
+            <div className="result-icon">✓</div>
+            <h2>Verification Complete</h2>
+            <p>Your face has been successfully verified.</p>
+            <div className="result-buttons">
+              <button className="retry-button" onClick={handleRetry}>
+                Verify Again
+              </button>
+              {onBack && (
+                <button className="back-button" onClick={onBack}>
+                  Back to App
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {state === 'failed' && (
+        <div className="verification-result failed">
+          <div className="result-content">
+            <div className="result-icon">✗</div>
+            <h2>Verification Failed</h2>
+            <p>We couldn't verify your face. Please try again.</p>
+            <div className="result-buttons">
+              <button className="retry-button" onClick={handleRetry}>
+                Try Again
+              </button>
+              {onBack && (
+                <button className="back-button" onClick={onBack}>
+                  Back to App
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FaceVerificationPage;

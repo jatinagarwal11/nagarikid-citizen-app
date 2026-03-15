@@ -1,0 +1,94 @@
+.ready-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.ready-content {
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+
+.project-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0066cc;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 0.75rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #666666;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.instructions {
+  margin-bottom: 2.5rem;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+  color: #555555;
+}
+
+.instruction-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.begin-scan-button {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  max-width: 200px;
+  transition: background-color 0.2s;
+}
+
+.begin-scan-button:hover {
+  background-color: #0052a3;
+}
+
+.begin-scan-button:active {
+  background-color: #004080;
+}
+
+@media (max-width: 480px) {
+  .ready-content {
+    max-width: 360px;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .instruction-item {
+    font-size: 0.875rem;
+  }
+}
