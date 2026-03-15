@@ -11,7 +11,7 @@ const LIVENESS_COLORS = [
 // CSS hue-rotate degrees matching each color
 const LIVENESS_HUES = [0, 120, 240, 60, 300];
 
-const FLASH_DURATION = 350; // ms per color
+const FLASH_DURATION = 2000; // ms per color
 
 export const useLivenessChallenge = (shouldStart) => {
   const [isRunning, setIsRunning] = useState(false);
