@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { useCameraStream } from '../hooks/useCameraStream';
 import { useFaceTracking } from '../hooks/useFaceTracking';
 import { useLivenessChallenge } from '../hooks/useLivenessChallenge';

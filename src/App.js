@@ -1,140 +1,135 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import QRCode from 'qrcode';
 import FaceVerificationPage from './FaceVerificationPage';
+import VerifierPage from './VerifierPage';
 import './App.css';
 
-function App() {
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+
+/* ────────────────────────────────────────────────────────
+   Landing Page
+   ──────────────────────────────────────────────────────── */
+function LandingPage({ onSelectCitizen, onSelectVerifier }) {
+  return (
+    <div className="landing">
+      <div className="landing-inner">
+        <div className="landing-brand">
+          <div className="brand-mark">N</div>
+          <h1 className="landing-title">NagarikID</h1>
+          <p className="landing-subtitle">Nepal's digital identity platform</p>
+        </div>
+
+        <div className="landing-cards">
+          <button className="role-card" onClick={onSelectCitizen}>
+            <div className="role-icon">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <h2 className="role-name">Nagarik</h2>
+            <p className="role-desc">Access your digital identity, generate QR codes, and manage your profile</p>
+            <span className="role-action">Continue →</span>
+          </button>
+
+          <button className="role-card" onClick={onSelectVerifier}>
+            <div className="role-icon">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M7 7h.01M7 12h.01M7 17h.01M12 7h.01M12 12h.01M12 17h.01M17 7h.01M17 12h.01M17 17h.01" />
+              </svg>
+            </div>
+            <h2 className="role-name">Verifier</h2>
+            <p className="role-desc">Scan and verify citizen QR codes for identity authentication</p>
+            <span className="role-action">Continue →</span>
+          </button>
+        </div>
+
+        <p className="landing-footer">Secure · Tamper-proof · Instant verification</p>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────
+   Citizen Flow
+   ──────────────────────────────────────────────────────── */
+function CitizenFlow({ onBack }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [qrData, setQrData] = useState('');
   const [countdown, setCountdown] = useState(5);
   const [showRegister, setShowRegister] = useState(false);
-  const [registrationStep, setRegistrationStep] = useState('scan'); // scan, verify, face_id_verify, form
+  const [registrationStep, setRegistrationStep] = useState('scan');
   const [scannedData, setScannedData] = useState(null);
   const [faceIdVerified, setFaceIdVerified] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 
   const login = async (national_id, password) => {
     try {
-      console.log('Attempting login to:', API_BASE);
       const res = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ national_id, password })
+        body: JSON.stringify({ national_id, password }),
       });
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      console.log('Login response:', data);
-      
       if (data.token) {
         localStorage.setItem('token', data.token);
         setLoggedIn(true);
-        loadUser();
       } else {
         alert('Invalid credentials');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      alert('Login failed: ' + error.message + '. Check console for details.');
+      alert('Login failed: ' + error.message);
     }
   };
 
   const loadUser = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      console.log('Loading user data...');
       const res = await fetch(`${API_BASE}/generate-token`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
-      if (!res.ok) {
-        throw new Error(`Token generation failed: ${res.status}`);
-      }
-      
+      if (!res.ok) throw new Error(`Token error: ${res.status}`);
       const data = await res.json();
-      console.log('Token data:', data);
-      
       if (data.uid) {
         const userRes = await fetch(`${API_BASE}/user`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
-        
-        if (!userRes.ok) {
-          throw new Error(`User data fetch failed: ${userRes.status}`);
-        }
-        
+        if (!userRes.ok) throw new Error(`User fetch failed: ${userRes.status}`);
         const userData = await userRes.json();
-        console.log('User data:', userData);
-        
         setUser({ ...userData, qrData: data });
-        generateQR(data);
+        const qrUrl = await QRCode.toDataURL(JSON.stringify(data));
+        setQrData(qrUrl);
         setCountdown(5);
       }
     } catch (error) {
-      console.error('Load user error:', error);
       alert('Failed to load user data: ' + error.message);
     }
-  }, [API_BASE]);
+  }, []);
 
-  const generateQR = async (data) => {
-    const qrString = JSON.stringify(data);
-    const qrUrl = await QRCode.toDataURL(qrString);
-    setQrData(qrUrl);
-  };
-
-  // Registration functions
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      alert('Camera access denied. Please allow camera access to scan your ID.');
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch {
+      alert('Camera access denied.');
     }
   };
 
   const captureImage = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0);
-      
-      // Fake OCR - in real implementation, this would call an OCR service
-      const fakeOCRData = {
-        national_id: '123456789', // This would be extracted from OCR
-        name: 'John Doe', // This would be extracted from OCR
-        dob: '1990-01-01' // This would be extracted from OCR
-      };
-      
-      setScannedData(fakeOCRData);
-      setRegistrationStep('verify');
-      
-      // Stop camera
-      const stream = video.srcObject;
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    }
-  };
-
-  const startFaceIdVerification = () => {
-    setRegistrationStep('face_id_verify');
-  };
-
-  const handleFaceVerificationSuccess = () => {
-    setFaceIdVerified(true);
-    setRegistrationStep('form');
+    if (!videoRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    setScannedData({ national_id: '123456789', name: 'John Doe', dob: '1990-01-01' });
+    setRegistrationStep('verify');
+    const stream = video.srcObject;
+    if (stream) stream.getTracks().forEach((t) => t.stop());
   };
 
   const registerUser = async (password) => {
@@ -146,141 +141,165 @@ function App() {
           national_id: scannedData.national_id,
           name: scannedData.name,
           dob: scannedData.dob,
-          photo_url: 'https://via.placeholder.com/100', // In real app, this would be from the ID card
-          password
-        })
+          photo_url: 'https://via.placeholder.com/100',
+          password,
+        }),
       });
-      
-      if (!res.ok) {
-        throw new Error(`Registration failed: ${res.status}`);
-      }
-      
-      await res.json(); // Parse response but don't store since we don't use it
+      if (!res.ok) throw new Error(`Registration failed: ${res.status}`);
+      await res.json();
       alert('Registration successful! You can now login.');
       setShowRegister(false);
       setRegistrationStep('scan');
       setScannedData(null);
       setFaceIdVerified(false);
     } catch (error) {
-      console.error('Registration error:', error);
       alert('Registration failed: ' + error.message);
     }
   };
 
   useEffect(() => {
-    if (loggedIn) {
-      loadUser(); // Load user data immediately when logged in
-      const interval = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            loadUser();
-            return 5;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    }
+    if (!loggedIn) return;
+    loadUser();
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) { loadUser(); return 5; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
   }, [loggedIn, loadUser]);
 
   useEffect(() => {
-    if (showRegister && registrationStep === 'scan') {
-      startCamera();
-    }
+    if (showRegister && registrationStep === 'scan') startCamera();
   }, [showRegister, registrationStep]);
 
-  if (!loggedIn) {
-    if (showRegister) {
-      // Registration flow
-      return (
-        <div className="register">
-          <h1>NagarikID Registration</h1>
-          
-          {registrationStep === 'scan' && (
-            <div className="scan-step">
-              <h2>Step 1: Scan Your National ID Card</h2>
-              <p>Position your National ID card in front of the camera.</p>
-              <video ref={videoRef} autoPlay playsInline style={{ width: '100%', maxWidth: '400px' }} />
-              <canvas ref={canvasRef} style={{ display: 'none' }} />
-              <br />
-              <button onClick={captureImage}>Capture ID Card</button>
-              <br />
-              <button onClick={() => setShowRegister(false)}>Back to Login</button>
-            </div>
-          )}
-          
-          {registrationStep === 'verify' && scannedData && (
-            <div className="verify-step">
-              <h2>Step 2: Verify Identity</h2>
-              <p>Extracted Information:</p>
-              <div className="extracted-data">
-                <p><strong>National ID:</strong> {scannedData.national_id}</p>
-                <p><strong>Name:</strong> {scannedData.name}</p>
-                <p><strong>Date of Birth:</strong> {scannedData.dob}</p>
-              </div>
-              <p>Now we need to verify that your face matches your registered identity.</p>
-              <button onClick={startFaceIdVerification}>Start Face ID Verification</button>
-              <br />
-              <button onClick={() => setRegistrationStep('scan')}>Rescan ID</button>
-            </div>
-          )}
-
-          {registrationStep === 'face_id_verify' && (
-            <div className="liveness-step">
-              <FaceVerificationPage
-                onBack={() => setRegistrationStep('verify')}
-                onSuccess={handleFaceVerificationSuccess}
-              />
-            </div>
-          )}
-          
-          {registrationStep === 'form' && scannedData && faceIdVerified && (
-            <div className="form-step">
-              <h2>Step 3: Create Account</h2>
-              <p>Face ID verification successful. Create your password.</p>
-              <input id="reg-password" type="password" placeholder="Create Password" />
-              <br />
-              <button onClick={() => registerUser(document.getElementById('reg-password').value)}>Complete Registration</button>
-              <br />
-              <button onClick={() => setRegistrationStep('verify')}>Back</button>
-            </div>
-          )}
-        </div>
-      );
-    } else {
-      // Login form
-      return (
-        <div className="login">
-          <h1>NagarikID</h1>
-          <input id="national_id" placeholder="National ID" />
-          <input id="password" type="password" placeholder="Password" />
-          <button onClick={() => login(document.getElementById('national_id').value, document.getElementById('password').value)}>Login</button>
-          <br />
-          <button onClick={() => setShowRegister(true)}>Register New Account</button>
-        </div>
-      );
-    }
-  }
-
-  // Show loading while user data is being fetched
-  if (!user) {
+  /* Registration */
+  if (!loggedIn && showRegister) {
     return (
-      <div className="loading">
-        <h1>NagarikID</h1>
-        <p>Loading your digital identity...</p>
+      <div className="register">
+        <div className="page-header">
+          <button className="back-link" onClick={() => setShowRegister(false)}>← Back</button>
+        </div>
+        <h1>Create Account</h1>
+
+        {registrationStep === 'scan' && (
+          <div className="step-card">
+            <span className="step-label">Step 1</span>
+            <h2>Scan National ID</h2>
+            <p>Position your ID card in front of the camera.</p>
+            <video ref={videoRef} autoPlay playsInline className="camera-preview" />
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
+            <button className="btn-primary" onClick={captureImage}>Capture</button>
+          </div>
+        )}
+
+        {registrationStep === 'verify' && scannedData && (
+          <div className="step-card">
+            <span className="step-label">Step 2</span>
+            <h2>Verify Identity</h2>
+            <div className="extracted-data">
+              <p><strong>National ID:</strong> {scannedData.national_id}</p>
+              <p><strong>Name:</strong> {scannedData.name}</p>
+              <p><strong>DOB:</strong> {scannedData.dob}</p>
+            </div>
+            <button className="btn-primary" onClick={() => setRegistrationStep('face_id_verify')}>
+              Start Face Verification
+            </button>
+            <button className="btn-secondary" onClick={() => setRegistrationStep('scan')}>Rescan</button>
+          </div>
+        )}
+
+        {registrationStep === 'face_id_verify' && (
+          <div className="liveness-step">
+            <FaceVerificationPage
+              onBack={() => setRegistrationStep('verify')}
+              onSuccess={() => { setFaceIdVerified(true); setRegistrationStep('form'); }}
+            />
+          </div>
+        )}
+
+        {registrationStep === 'form' && scannedData && faceIdVerified && (
+          <div className="step-card">
+            <span className="step-label">Step 3</span>
+            <h2>Set Password</h2>
+            <p>Face verified. Create your account password.</p>
+            <input id="reg-password" type="password" placeholder="Password" className="input" />
+            <button className="btn-primary" onClick={() => registerUser(document.getElementById('reg-password').value)}>
+              Complete
+            </button>
+          </div>
+        )}
       </div>
     );
   }
 
+  /* Login */
+  if (!loggedIn) {
+    return (
+      <div className="login">
+        <div className="page-header">
+          <button className="back-link" onClick={onBack}>← Back</button>
+        </div>
+        <div className="login-inner">
+          <h1>NagarikID</h1>
+          <p className="login-subtitle">Sign in to your digital identity</p>
+          <input id="national_id" placeholder="National ID" className="input" />
+          <input id="password" type="password" placeholder="Password" className="input" />
+          <button className="btn-primary" onClick={() => login(document.getElementById('national_id').value, document.getElementById('password').value)}>
+            Sign In
+          </button>
+          <button className="btn-secondary" onClick={() => setShowRegister(true)}>Create Account</button>
+        </div>
+      </div>
+    );
+  }
+
+  /* Loading */
+  if (!user) {
+    return (
+      <div className="loading">
+        <h1>NagarikID</h1>
+        <p>Loading your digital identity…</p>
+      </div>
+    );
+  }
+
+  /* Dashboard */
   return (
-    <div className="id-card">
-      <img src={user.photo_url || 'https://via.placeholder.com/100'} alt="Portrait of verified person" />
-      <h2>{user.name}</h2>
-      <p>National ID: {user.national_id}</p>
-      <p>DOB: {user.dob}</p>
-      <img src={qrData} alt="QR Code" />
-      <p>QR refresh in: {countdown} seconds</p>
+    <div className="dashboard">
+      <div className="page-header">
+        <button className="back-link" onClick={() => { setLoggedIn(false); setUser(null); localStorage.removeItem('token'); }}>
+          Sign Out
+        </button>
+      </div>
+      <div className="id-card">
+        <img src={user.photo_url || 'https://via.placeholder.com/100'} alt="User" className="id-photo" />
+        <h2>{user.name}</h2>
+        <p className="id-meta">National ID: {user.national_id}</p>
+        <p className="id-meta">DOB: {user.dob}</p>
+        <div className="qr-section">
+          <img src={qrData} alt="QR Code" className="qr-img" />
+          <p className="qr-timer">Refreshes in {countdown}s</p>
+        </div>
+      </div>
     </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────
+   App Router
+   ──────────────────────────────────────────────────────── */
+function App() {
+  const [view, setView] = useState('landing');
+
+  if (view === 'citizen') return <CitizenFlow onBack={() => setView('landing')} />;
+  if (view === 'verifier') return <VerifierPage onBack={() => setView('landing')} />;
+
+  return (
+    <LandingPage
+      onSelectCitizen={() => setView('citizen')}
+      onSelectVerifier={() => setView('verifier')}
+    />
   );
 }
 

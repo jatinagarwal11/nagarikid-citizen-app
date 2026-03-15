@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import ReadyScreen from './components/ReadyScreen';
 import CameraScanScreen from './components/CameraScanScreen';
 import './FaceVerification.css';
