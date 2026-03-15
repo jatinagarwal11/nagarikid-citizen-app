@@ -39,6 +39,36 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
   const challengeStartTimeRef = useRef(null);
   const lastFacePositionRef = useRef({ x: 0, y: 0 });
 
+  const stabilityTimerRef = useRef(null);
+  const challengeStartTimeRef = useRef(null);
+  const lastFacePositionRef = useRef({ x: 0, y: 0 });
+
+  const drawUI = (ctx, width, height) => {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) * 0.25;
+
+    // Draw alignment circle
+    ctx.strokeStyle = faceDetected ? (alignment.stable ? '#00FF00' : '#FFFF00') : '#FF0000';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // Draw challenge overlay
+    if (state === 'challenge_running' && challengeStep < challengeColors.length) {
+      const color = challengeColors[challengeStep].color;
+      ctx.fillStyle = color + '80'; // Semi-transparent
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    // Draw instruction text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(instruction, centerX, height - 50);
+  };
+
   // Face detection callback
   const onResults = useCallback((results) => {
     const canvas = canvasRef.current;
@@ -120,33 +150,7 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
 
     // Draw UI overlays
     drawUI(ctx, canvas.width, canvas.height);
-  }, [state]);
-
-  const drawUI = (ctx, width, height) => {
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.25;
-
-    // Draw alignment circle
-    ctx.strokeStyle = faceDetected ? (alignment.stable ? '#00FF00' : '#FFFF00') : '#FF0000';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    ctx.stroke();
-
-    // Draw challenge overlay
-    if (state === 'challenge_running' && challengeStep < challengeColors.length) {
-      const color = challengeColors[challengeStep].color;
-      ctx.fillStyle = color + '80'; // Semi-transparent
-      ctx.fillRect(0, 0, width, height);
-    }
-
-    // Draw instruction text
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '20px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(instruction, centerX, height - 50);
-  };
+  }, [state, faceDetected, alignment, challengeStep, challengeColors, instruction, drawUI]);
 
   // Initialize face mesh
   useEffect(() => {
@@ -216,14 +220,53 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
       if (cameraRef.current) {
         cameraRef.current.stop();
       }
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      const currentAnimationFrame = animationFrameRef.current;
+      if (currentAnimationFrame) {
+        cancelAnimationFrame(currentAnimationFrame);
       }
       if (stabilityTimerRef.current) {
         clearTimeout(stabilityTimerRef.current);
       }
     };
   }, [initializeCamera]);
+
+  const startChallenge = useCallback(() => {
+    setState('challenge_running');
+    setChallengeStep(0);
+    challengeStartTimeRef.current = Date.now();
+    setMetrics(prev => ({ ...prev, samples: [] }));
+
+    // Start challenge sequence
+    const runChallengeStep = (step) => {
+      if (step >= challengeColors.length) {
+        // Challenge complete, analyze results
+        analyzeResults();
+        return;
+      }
+
+      setChallengeStep(step);
+      setInstruction(`Look at the ${challengeColors[step].color.toLowerCase()} light`);
+
+      // Sample brightness during this step
+      setTimeout(() => {
+        // In a real implementation, we'd sample face brightness here
+        // For MVP, we'll simulate some variation
+        setMetrics(prev => ({
+          ...prev,
+          samples: [...prev.samples, {
+            step,
+            color: challengeColors[step].color,
+            brightness: Math.random() * 0.5 + 0.3, // Simulate brightness variation
+            timestamp: Date.now()
+          }]
+        }));
+
+        runChallengeStep(step + 1);
+      }, challengeColors[step].durationMs);
+    };
+
+    runChallengeStep(0);
+  }, [challengeColors]);
 
   // Handle state transitions
   useEffect(() => {
@@ -262,45 +305,7 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
     } else if (state === 'aligning' && !faceDetected) {
       setInstruction('No face detected. Position your face in front of the camera.');
     }
-  }, [state, faceDetected, alignment]);
-
-  const startChallenge = () => {
-    setState('challenge_running');
-    setChallengeStep(0);
-    challengeStartTimeRef.current = Date.now();
-    setMetrics(prev => ({ ...prev, samples: [] }));
-
-    // Start challenge sequence
-    const runChallengeStep = (step) => {
-      if (step >= challengeColors.length) {
-        // Challenge complete, analyze results
-        analyzeResults();
-        return;
-      }
-
-      setChallengeStep(step);
-      setInstruction(`Look at the ${challengeColors[step].color.toLowerCase()} light`);
-
-      // Sample brightness during this step
-      setTimeout(() => {
-        // In a real implementation, we'd sample face brightness here
-        // For MVP, we'll simulate some variation
-        setMetrics(prev => ({
-          ...prev,
-          samples: [...prev.samples, {
-            step,
-            color: challengeColors[step].color,
-            brightness: Math.random() * 0.5 + 0.3, // Simulate brightness variation
-            timestamp: Date.now()
-          }]
-        }));
-
-        runChallengeStep(step + 1);
-      }, challengeColors[step].durationMs);
-    };
-
-    runChallengeStep(0);
-  };
+  }, [state, faceDetected, alignment, startChallenge]);
 
   const analyzeResults = () => {
     setState('analyzing');
