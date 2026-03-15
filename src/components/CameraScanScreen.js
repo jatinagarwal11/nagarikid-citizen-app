@@ -58,6 +58,8 @@ const CameraScanScreen = ({
     if (state === 'camera_loading') {
       if (faceDetected) {
         onFaceDetected();
+      } else {
+        onFaceLost();
       }
     } else if (state === 'no_face' || state === 'aligning') {
       if (!faceDetected) {
