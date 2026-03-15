@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import QRCode from 'qrcode';
+import { LivenessDetector } from './LivenessDetector';
 import './App.css';
 
 function App() {
@@ -128,12 +129,21 @@ function App() {
   };
 
   const performLivenessCheck = () => {
-    // Fake liveness detection - in real implementation, this would use computer vision
-    alert('Performing liveness detection... (This is faked for MVP)');
-    setTimeout(() => {
+    setRegistrationStep('liveness');
+  };
+
+  const handleLivenessComplete = (result) => {
+    if (result.passed) {
       setLivenessVerified(true);
       setRegistrationStep('form');
-    }, 2000);
+    } else {
+      alert('Liveness verification failed. Please try again.');
+      setRegistrationStep('verify');
+    }
+  };
+
+  const handleLivenessCancel = () => {
+    setRegistrationStep('verify');
   };
 
   const registerUser = async (password) => {
@@ -221,6 +231,15 @@ function App() {
               <button onClick={performLivenessCheck}>Start Liveness Check</button>
               <br />
               <button onClick={() => setRegistrationStep('scan')}>Rescan ID</button>
+            </div>
+          )}
+          
+          {registrationStep === 'liveness' && (
+            <div className="liveness-step">
+              <LivenessDetector 
+                onComplete={handleLivenessComplete}
+                onCancel={handleLivenessCancel}
+              />
             </div>
           )}
           

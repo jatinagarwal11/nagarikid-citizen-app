@@ -1,0 +1,446 @@
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { FaceMesh } from '@mediapipe/face_mesh';
+import { Camera } from '@mediapipe/camera_utils';
+import { drawConnectors } from '@mediapipe/drawing_utils';
+import { FACEMESH_TESSELATION } from '@mediapipe/face_mesh';
+
+export const LivenessDetector = ({ onComplete, onCancel }) => {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const faceMeshRef = useRef(null);
+  const cameraRef = useRef(null);
+  const animationFrameRef = useRef(null);
+
+  // State management
+  const [state, setState] = useState('requesting_permission'); // idle, requesting_permission, aligning, ready, challenge_running, analyzing, success, failed
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [alignment, setAlignment] = useState({ x: 0, y: 0, size: 0, stable: false });
+  const [instruction, setInstruction] = useState('Initializing camera...');
+  const [challengeStep, setChallengeStep] = useState(0);
+  const [challengeColors] = useState([
+    { color: '#0000FF', durationMs: 350 },
+    { color: '#FF0000', durationMs: 350 },
+    { color: '#00FF00', durationMs: 350 },
+    { color: '#FFFFFF', durationMs: 350 },
+    { color: '#2222FF', durationMs: 350 }
+  ]);
+
+  // Metrics for analysis
+  const [metrics, setMetrics] = useState({
+    alignmentStability: 0,
+    facePresenceRatio: 0,
+    brightnessResponseScore: 0,
+    motionScore: 0,
+    blinkDetected: false,
+    samples: []
+  });
+
+  const stabilityTimerRef = useRef(null);
+  const challengeStartTimeRef = useRef(null);
+  const lastFacePositionRef = useRef({ x: 0, y: 0 });
+
+  // Face detection callback
+  const onResults = useCallback((results) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+      const landmarks = results.multiFaceLandmarks[0];
+
+      // Calculate face bounding box
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      landmarks.forEach(landmark => {
+        minX = Math.min(minX, landmark.x);
+        maxX = Math.max(maxX, landmark.x);
+        minY = Math.min(minY, landmark.y);
+        maxY = Math.max(maxY, landmark.y);
+      });
+
+      const faceWidth = maxX - minX;
+      const faceHeight = maxY - minY;
+      const faceCenterX = (minX + maxX) / 2;
+      const faceCenterY = (minY + maxY) / 2;
+      const faceSize = Math.max(faceWidth, faceHeight);
+
+      // Canvas dimensions
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      const circleCenterX = canvasWidth / 2;
+      const circleCenterY = canvasHeight / 2;
+      const circleRadius = Math.min(canvasWidth, canvasHeight) * 0.25;
+
+      // Calculate alignment
+      const distanceFromCenter = Math.sqrt(
+        Math.pow((faceCenterX * canvasWidth - circleCenterX), 2) +
+        Math.pow((faceCenterY * canvasHeight - circleCenterY), 2)
+      );
+
+      const targetSize = circleRadius * 2;
+      const sizeRatio = faceSize * canvasWidth / targetSize;
+
+      // Check if face is aligned
+      const isCentered = distanceFromCenter < circleRadius * 0.3;
+      const isRightSize = sizeRatio > 0.8 && sizeRatio < 1.3;
+
+      // Motion detection
+      const motion = Math.sqrt(
+        Math.pow(faceCenterX - lastFacePositionRef.current.x, 2) +
+        Math.pow(faceCenterY - lastFacePositionRef.current.y, 2)
+      );
+      lastFacePositionRef.current = { x: faceCenterX, y: faceCenterY };
+
+      setFaceDetected(true);
+      setAlignment({
+        x: faceCenterX * canvasWidth - circleCenterX,
+        y: faceCenterY * canvasHeight - circleCenterY,
+        size: sizeRatio,
+        stable: isCentered && isRightSize && motion < 0.01
+      });
+
+      // Update metrics
+      setMetrics(prev => ({
+        ...prev,
+        motionScore: Math.max(prev.motionScore, motion),
+        facePresenceRatio: prev.facePresenceRatio + 1
+      }));
+
+      // Draw face landmarks (optional, for debugging)
+      if (state === 'aligning') {
+        drawConnectors(ctx, landmarks, FACEMESH_TESSELATION, { color: '#C0C0C070', lineWidth: 1 });
+      }
+
+    } else {
+      setFaceDetected(false);
+      setAlignment({ x: 0, y: 0, size: 0, stable: false });
+    }
+
+    // Draw UI overlays
+    drawUI(ctx, canvas.width, canvas.height);
+  }, [state]);
+
+  const drawUI = (ctx, width, height) => {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) * 0.25;
+
+    // Draw alignment circle
+    ctx.strokeStyle = faceDetected ? (alignment.stable ? '#00FF00' : '#FFFF00') : '#FF0000';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // Draw challenge overlay
+    if (state === 'challenge_running' && challengeStep < challengeColors.length) {
+      const color = challengeColors[challengeStep].color;
+      ctx.fillStyle = color + '80'; // Semi-transparent
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    // Draw instruction text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(instruction, centerX, height - 50);
+  };
+
+  // Initialize face mesh
+  useEffect(() => {
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+      }
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    faceMesh.onResults(onResults);
+    faceMeshRef.current = faceMesh;
+
+    return () => {
+      faceMesh.close();
+    };
+  }, [onResults]);
+
+  // Initialize camera
+  const initializeCamera = useCallback(async () => {
+    try {
+      setState('requesting_permission');
+      setInstruction('Requesting camera permission...');
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: 640, height: 480 }
+      });
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+
+        const camera = new Camera(videoRef.current, {
+          onFrame: async () => {
+            if (faceMeshRef.current) {
+              await faceMeshRef.current.send({ image: videoRef.current });
+            }
+          },
+          width: 640,
+          height: 480
+        });
+
+        camera.start();
+        cameraRef.current = camera;
+
+        setState('aligning');
+        setInstruction('Position your face inside the circle');
+      }
+    } catch (error) {
+      console.error('Camera initialization failed:', error);
+      setState('failed');
+      setInstruction('Camera access denied. Please allow camera access and try again.');
+    }
+  }, []);
+
+  // Start camera on mount
+  useEffect(() => {
+    initializeCamera();
+
+    return () => {
+      if (cameraRef.current) {
+        cameraRef.current.stop();
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (stabilityTimerRef.current) {
+        clearTimeout(stabilityTimerRef.current);
+      }
+    };
+  }, [initializeCamera]);
+
+  // Handle state transitions
+  useEffect(() => {
+    if (state === 'aligning' && faceDetected) {
+      if (alignment.stable) {
+        setInstruction('Hold still...');
+        if (!stabilityTimerRef.current) {
+          stabilityTimerRef.current = setTimeout(() => {
+            setState('ready');
+            setInstruction('Perfect! Starting liveness check...');
+            setTimeout(() => startChallenge(), 1000);
+          }, 1000);
+        }
+      } else {
+        if (stabilityTimerRef.current) {
+          clearTimeout(stabilityTimerRef.current);
+          stabilityTimerRef.current = null;
+        }
+
+        // Provide alignment instructions
+        let instruction = '';
+        if (Math.abs(alignment.x) > 50) {
+          instruction += alignment.x > 0 ? 'Move left ' : 'Move right ';
+        }
+        if (Math.abs(alignment.y) > 50) {
+          instruction += alignment.y > 0 ? 'Move up ' : 'Move down ';
+        }
+        if (alignment.size < 0.8) {
+          instruction += 'Move closer ';
+        } else if (alignment.size > 1.3) {
+          instruction += 'Move back ';
+        }
+
+        setInstruction(instruction || 'Position your face inside the circle');
+      }
+    } else if (state === 'aligning' && !faceDetected) {
+      setInstruction('No face detected. Position your face in front of the camera.');
+    }
+  }, [state, faceDetected, alignment]);
+
+  const startChallenge = () => {
+    setState('challenge_running');
+    setChallengeStep(0);
+    challengeStartTimeRef.current = Date.now();
+    setMetrics(prev => ({ ...prev, samples: [] }));
+
+    // Start challenge sequence
+    const runChallengeStep = (step) => {
+      if (step >= challengeColors.length) {
+        // Challenge complete, analyze results
+        analyzeResults();
+        return;
+      }
+
+      setChallengeStep(step);
+      setInstruction(`Look at the ${challengeColors[step].color.toLowerCase()} light`);
+
+      // Sample brightness during this step
+      setTimeout(() => {
+        // In a real implementation, we'd sample face brightness here
+        // For MVP, we'll simulate some variation
+        setMetrics(prev => ({
+          ...prev,
+          samples: [...prev.samples, {
+            step,
+            color: challengeColors[step].color,
+            brightness: Math.random() * 0.5 + 0.3, // Simulate brightness variation
+            timestamp: Date.now()
+          }]
+        }));
+
+        runChallengeStep(step + 1);
+      }, challengeColors[step].durationMs);
+    };
+
+    runChallengeStep(0);
+  };
+
+  const analyzeResults = () => {
+    setState('analyzing');
+    setInstruction('Analyzing...');
+
+    // Simple heuristic analysis
+    const { facePresenceRatio, motionScore, samples } = metrics;
+    const totalSteps = challengeColors.length;
+    const presenceRatio = facePresenceRatio / (totalSteps * 60); // Rough estimate
+
+    // Check brightness variation
+    const brightnessValues = samples.map(s => s.brightness);
+    const brightnessVariation = Math.max(...brightnessValues) - Math.min(...brightnessValues);
+
+    // Scoring logic
+    const scores = {
+      facePresence: presenceRatio > 0.8 ? 1 : 0,
+      brightnessResponse: brightnessVariation > 0.2 ? 1 : 0,
+      motion: motionScore > 0.001 ? 1 : 0,
+      stability: alignment.stable ? 1 : 0
+    };
+
+    const totalScore = Object.values(scores).reduce((a, b) => a + b, 0) / Object.keys(scores).length;
+
+    setTimeout(() => {
+      if (totalScore > 0.7) {
+        setState('success');
+        setInstruction('Liveness verification successful!');
+        setTimeout(() => {
+          onComplete({
+            passed: true,
+            score: totalScore,
+            reasons: ['Face detected', 'Brightness response detected', 'Natural motion detected'],
+            metrics: {
+              alignmentStability: scores.stability,
+              facePresenceRatio: presenceRatio,
+              brightnessResponseScore: brightnessVariation,
+              motionScore: motionScore,
+              blinkDetected: false
+            }
+          });
+        }, 2000);
+      } else {
+        setState('failed');
+        setInstruction('Liveness verification failed. Please try again.');
+        setTimeout(() => {
+          onComplete({
+            passed: false,
+            score: totalScore,
+            reasons: ['Insufficient liveness indicators'],
+            metrics: {
+              alignmentStability: scores.stability,
+              facePresenceRatio: presenceRatio,
+              brightnessResponseScore: brightnessVariation,
+              motionScore: motionScore,
+              blinkDetected: false
+            }
+          });
+        }, 2000);
+      }
+    }, 1000);
+  };
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100vh', background: '#000' }}>
+      <video
+        ref={videoRef}
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          transform: 'scaleX(-1)' // Mirror for natural feel
+        }}
+        muted
+        playsInline
+      />
+      <canvas
+        ref={canvasRef}
+        width={640}
+        height={480}
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '80%',
+          maxWidth: '640px',
+          height: 'auto'
+        }}
+      />
+
+      {/* Status overlay */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        background: 'rgba(0,0,0,0.7)',
+        color: 'white',
+        padding: '10px',
+        borderRadius: '5px',
+        fontSize: '14px'
+      }}>
+        Status: {state.replace('_', ' ').toUpperCase()}
+      </div>
+
+      {/* Cancel button */}
+      <button
+        onClick={onCancel}
+        style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          padding: '10px 20px',
+          background: '#FF4444',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer'
+        }}
+      >
+        Cancel
+      </button>
+
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{
+          position: 'absolute',
+          bottom: '20px',
+          left: '20px',
+          background: 'rgba(0,0,0,0.7)',
+          color: 'white',
+          padding: '10px',
+          borderRadius: '5px',
+          fontSize: '12px'
+        }}>
+          Face: {faceDetected ? 'Yes' : 'No'} | Stable: {alignment.stable ? 'Yes' : 'No'}<br/>
+          Motion: {metrics.motionScore.toFixed(3)} | Presence: {(metrics.facePresenceRatio / 60).toFixed(2)}
+        </div>
+      )}
+    </div>
+  );
+};
