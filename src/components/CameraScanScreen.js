@@ -180,6 +180,7 @@ const CameraScanScreen = ({
                 <ellipse
                   className="oval-progress-arc"
                   cx="50" cy="62.5" rx="47" ry="59"
+                  transform="rotate(-90, 50, 62.5)"
                 />
               </svg>
             )}
