@@ -39,7 +39,7 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
   const challengeStartTimeRef = useRef(null);
   const lastFacePositionRef = useRef({ x: 0, y: 0 });
 
-  const drawUI = (ctx, width, height) => {
+  const drawUI = useCallback((ctx, width, height) => {
     const centerX = width / 2;
     const centerY = height / 2;
     const radius = Math.min(width, height) * 0.25;
@@ -63,7 +63,7 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
     ctx.font = '20px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(instruction, centerX, height - 50);
-  };
+  }, [faceDetected, alignment.stable, state, challengeStep, challengeColors, instruction]);
 
   // Face detection callback
   const onResults = useCallback((results) => {
@@ -146,7 +146,7 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
 
     // Draw UI overlays
     drawUI(ctx, canvas.width, canvas.height);
-  }, [state, faceDetected, alignment, challengeStep, challengeColors, instruction, drawUI]);
+  }, [state, drawUI]);
 
   // Initialize face mesh
   useEffect(() => {
@@ -226,83 +226,6 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
     };
   }, [initializeCamera]);
 
-  const startChallenge = useCallback(() => {
-    setState('challenge_running');
-    setChallengeStep(0);
-    challengeStartTimeRef.current = Date.now();
-    setMetrics(prev => ({ ...prev, samples: [] }));
-
-    // Start challenge sequence
-    const runChallengeStep = (step) => {
-      if (step >= challengeColors.length) {
-        // Challenge complete, analyze results
-        analyzeResults();
-        return;
-      }
-
-      setChallengeStep(step);
-      setInstruction(`Look at the ${challengeColors[step].color.toLowerCase()} light`);
-
-      // Sample brightness during this step
-      setTimeout(() => {
-        // In a real implementation, we'd sample face brightness here
-        // For MVP, we'll simulate some variation
-        setMetrics(prev => ({
-          ...prev,
-          samples: [...prev.samples, {
-            step,
-            color: challengeColors[step].color,
-            brightness: Math.random() * 0.5 + 0.3, // Simulate brightness variation
-            timestamp: Date.now()
-          }]
-        }));
-
-        runChallengeStep(step + 1);
-      }, challengeColors[step].durationMs);
-    };
-
-    runChallengeStep(0);
-  }, [challengeColors]);
-
-  // Handle state transitions
-  useEffect(() => {
-    if (state === 'aligning' && faceDetected) {
-      if (alignment.stable) {
-        setInstruction('Hold still...');
-        if (!stabilityTimerRef.current) {
-          stabilityTimerRef.current = setTimeout(() => {
-            setState('ready');
-            setInstruction('Perfect! Starting liveness check...');
-            setTimeout(() => startChallenge(), 1000);
-          }, 1000);
-        }
-      } else {
-        if (stabilityTimerRef.current) {
-          clearTimeout(stabilityTimerRef.current);
-          stabilityTimerRef.current = null;
-        }
-
-        // Provide alignment instructions
-        let instruction = '';
-        if (Math.abs(alignment.x) > 50) {
-          instruction += alignment.x > 0 ? 'Move left ' : 'Move right ';
-        }
-        if (Math.abs(alignment.y) > 50) {
-          instruction += alignment.y > 0 ? 'Move up ' : 'Move down ';
-        }
-        if (alignment.size < 0.8) {
-          instruction += 'Move closer ';
-        } else if (alignment.size > 1.3) {
-          instruction += 'Move back ';
-        }
-
-        setInstruction(instruction || 'Position your face inside the circle');
-      }
-    } else if (state === 'aligning' && !faceDetected) {
-      setInstruction('No face detected. Position your face in front of the camera.');
-    }
-  }, [state, faceDetected, alignment, startChallenge]);
-
   const analyzeResults = () => {
     setState('analyzing');
     setInstruction('Analyzing...');
@@ -364,6 +287,83 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
       }
     }, 1000);
   };
+
+  const startChallenge = useCallback(() => {
+    setState('challenge_running');
+    setChallengeStep(0);
+    challengeStartTimeRef.current = Date.now();
+    setMetrics(prev => ({ ...prev, samples: [] }));
+
+    // Start challenge sequence
+    const runChallengeStep = (step) => {
+      if (step >= challengeColors.length) {
+        // Challenge complete, analyze results
+        analyzeResults();
+        return;
+      }
+
+      setChallengeStep(step);
+      setInstruction(`Look at the ${challengeColors[step].color.toLowerCase()} light`);
+
+      // Sample brightness during this step
+      setTimeout(() => {
+        // In a real implementation, we'd sample face brightness here
+        // For MVP, we'll simulate some variation
+        setMetrics(prev => ({
+          ...prev,
+          samples: [...prev.samples, {
+            step,
+            color: challengeColors[step].color,
+            brightness: Math.random() * 0.5 + 0.3, // Simulate brightness variation
+            timestamp: Date.now()
+          }]
+        }));
+
+        runChallengeStep(step + 1);
+      }, challengeColors[step].durationMs);
+    };
+
+    runChallengeStep(0);
+  }, [challengeColors, analyzeResults]);
+
+  // Handle state transitions
+  useEffect(() => {
+    if (state === 'aligning' && faceDetected) {
+      if (alignment.stable) {
+        setInstruction('Hold still...');
+        if (!stabilityTimerRef.current) {
+          stabilityTimerRef.current = setTimeout(() => {
+            setState('ready');
+            setInstruction('Perfect! Starting liveness check...');
+            setTimeout(() => startChallenge(), 1000);
+          }, 1000);
+        }
+      } else {
+        if (stabilityTimerRef.current) {
+          clearTimeout(stabilityTimerRef.current);
+          stabilityTimerRef.current = null;
+        }
+
+        // Provide alignment instructions
+        let instruction = '';
+        if (Math.abs(alignment.x) > 50) {
+          instruction += alignment.x > 0 ? 'Move left ' : 'Move right ';
+        }
+        if (Math.abs(alignment.y) > 50) {
+          instruction += alignment.y > 0 ? 'Move up ' : 'Move down ';
+        }
+        if (alignment.size < 0.8) {
+          instruction += 'Move closer ';
+        } else if (alignment.size > 1.3) {
+          instruction += 'Move back ';
+        }
+
+        setInstruction(instruction || 'Position your face inside the circle');
+      }
+    } else if (state === 'aligning' && !faceDetected) {
+      setInstruction('No face detected. Position your face in front of the camera.');
+    }
+  }, [state, faceDetected, alignment, startChallenge]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh', background: '#000' }}>
