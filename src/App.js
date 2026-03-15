@@ -160,7 +160,7 @@ function CitizenFlow({ onBack }) {
     setTimeout(() => {
       setScanning(false);
       setScanProgress('');
-      setScannedData({ national_id: '123456789', name: 'Aarav Thapa', dob: '1998-07-15' });
+      setScannedData({ national_id: '123456789', name: 'Jatin Agarwal', dob: '1998-07-15' });
       setRegistrationStep('verify');
     }, 4200);
   };
@@ -174,7 +174,7 @@ function CitizenFlow({ onBack }) {
           national_id: scannedData.national_id,
           name: scannedData.name,
           dob: scannedData.dob,
-          photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=face',
+          photo_url: '/jatin.jpg',
           password,
         }),
       });
@@ -250,7 +250,7 @@ function CitizenFlow({ onBack }) {
             <span className="step-label">Step 2</span>
             <h2>Verify Identity</h2>
             <div className="scanned-id-card">
-              <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&h=120&fit=crop&crop=face" alt="Scanned portrait" className="scanned-portrait" />
+              <img src="/jatin.jpg" alt="Scanned portrait" className="scanned-portrait" />
               <div className="extracted-data">
                 <p><strong>National ID:</strong> {scannedData.national_id}</p>
                 <p><strong>Name:</strong> {scannedData.name}</p>
