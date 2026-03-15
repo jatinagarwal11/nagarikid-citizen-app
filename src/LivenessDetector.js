@@ -17,11 +17,12 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
   const [instruction, setInstruction] = useState('Initializing camera...');
   const [challengeStep, setChallengeStep] = useState(0);
   const [challengeColors] = useState([
-    { color: '#0000FF', durationMs: 350 },
-    { color: '#FF0000', durationMs: 350 },
-    { color: '#00FF00', durationMs: 350 },
-    { color: '#FFFFFF', durationMs: 350 },
-    { color: '#2222FF', durationMs: 350 }
+    { color: '#FF0000', durationMs: 800, name: 'Red' },      // Bright red
+    { color: '#00FF00', durationMs: 800, name: 'Green' },    // Bright green
+    { color: '#0000FF', durationMs: 800, name: 'Blue' },     // Bright blue
+    { color: '#FFFF00', durationMs: 800, name: 'Yellow' },   // Bright yellow
+    { color: '#FF00FF', durationMs: 800, name: 'Magenta' },  // Bright magenta
+    { color: '#00FFFF', durationMs: 800, name: 'Cyan' }      // Bright cyan
   ]);
 
   // Metrics for analysis
@@ -43,26 +44,158 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
     const centerY = height / 2;
     const radius = Math.min(width, height) * 0.25;
 
-    // Draw alignment circle
-    ctx.strokeStyle = faceDetected ? (alignment.stable ? '#00FF00' : '#FFFF00') : '#FF0000';
-    ctx.lineWidth = 3;
+    // Clear any previous overlays first
+    ctx.save();
+
+    // Draw semi-transparent background for better contrast
+    if (state === 'challenge_running') {
+      if (challengeStep === -1) {
+        // White flash between colors
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+      } else if (challengeStep >= 0 && challengeStep < challengeColors.length) {
+        // Color challenge
+        const currentColor = challengeColors[challengeStep];
+        ctx.fillStyle = currentColor.color + 'CC'; // More opaque for visibility
+        ctx.fillRect(0, 0, width, height);
+      }
+    }
+
+    // Draw alignment guide - more prominent
+    ctx.strokeStyle = faceDetected ? (alignment.stable ? '#00FF00' : '#FFA500') : '#FF0000';
+    ctx.lineWidth = 4;
+    ctx.setLineDash(faceDetected && !alignment.stable ? [10, 5] : []); // Dashed line when not aligned
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     ctx.stroke();
+    ctx.setLineDash([]); // Reset dash
 
-    // Draw challenge overlay
-    if (state === 'challenge_running' && challengeStep < challengeColors.length) {
-      const color = challengeColors[challengeStep].color;
-      ctx.fillStyle = color + '80'; // Semi-transparent
-      ctx.fillRect(0, 0, width, height);
+    // Draw inner circle for better guidance
+    ctx.strokeStyle = faceDetected ? (alignment.stable ? '#00FF00' : '#FFA500') : '#FF0000';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.8, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // Draw crosshairs for precise alignment
+    if (!alignment.stable && faceDetected) {
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1;
+
+      // Horizontal line
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius * 0.5, centerY);
+      ctx.lineTo(centerX + radius * 0.5, centerY);
+      ctx.stroke();
+
+      // Vertical line
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY - radius * 0.5);
+      ctx.lineTo(centerX, centerY + radius * 0.5);
+      ctx.stroke();
     }
 
-    // Draw instruction text
+    // Draw face position indicator if face is detected but not aligned
+    if (faceDetected && !alignment.stable) {
+      const faceX = centerX + alignment.x;
+      const faceY = centerY + alignment.y;
+
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(faceX, faceY, 20, 0, 2 * Math.PI);
+      ctx.stroke();
+
+      // Draw arrow pointing to center
+      const angle = Math.atan2(centerY - faceY, centerX - faceX);
+      const arrowLength = 30;
+      const arrowX = faceX + Math.cos(angle) * 25;
+      const arrowY = faceY + Math.sin(angle) * 25;
+
+      ctx.beginPath();
+      ctx.moveTo(faceX, faceY);
+      ctx.lineTo(arrowX, arrowY);
+      ctx.stroke();
+
+      // Arrowhead
+      ctx.beginPath();
+      ctx.moveTo(arrowX, arrowY);
+      ctx.lineTo(arrowX - 5 * Math.cos(angle - Math.PI/6), arrowY - 5 * Math.sin(angle - Math.PI/6));
+      ctx.moveTo(arrowX, arrowY);
+      ctx.lineTo(arrowX - 5 * Math.cos(angle + Math.PI/6), arrowY - 5 * Math.sin(angle + Math.PI/6));
+      ctx.stroke();
+    }
+
+    // Draw progress indicator during challenge
+    if (state === 'challenge_running') {
+      const progress = (challengeStep + 1) / challengeColors.length;
+      const progressBarWidth = width * 0.8;
+      const progressBarHeight = 8;
+      const progressBarX = (width - progressBarWidth) / 2;
+      const progressBarY = height - 60;
+
+      // Background
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.fillRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
+
+      // Progress fill
+      ctx.fillStyle = '#00FF00';
+      ctx.fillRect(progressBarX, progressBarY, progressBarWidth * progress, progressBarHeight);
+
+      // Progress text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${challengeStep + 1}/${challengeColors.length}`, width / 2, progressBarY - 10);
+    }
+
+    // Draw status indicator
+    const statusY = 80;
+    let statusColor = '#FF0000';
+    let statusText = 'No Face Detected';
+
+    if (faceDetected) {
+      if (alignment.stable) {
+        statusColor = '#00FF00';
+        statusText = state === 'ready' ? 'Ready for Challenge' :
+                    state === 'challenge_running' ? 'Challenge in Progress' :
+                    state === 'analyzing' ? 'Analyzing...' :
+                    state === 'success' ? 'Success!' : 'Face Aligned';
+      } else {
+        statusColor = '#FFA500';
+        statusText = 'Adjust Face Position';
+      }
+    }
+
+    // Status background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(20, statusY - 25, 200, 40);
+
+    // Status indicator dot
+    ctx.fillStyle = statusColor;
+    ctx.beginPath();
+    ctx.arc(40, statusY, 8, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Status text
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '20px Arial';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(statusText, 60, statusY + 5);
+
+    // Draw instruction text with better visibility
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 18px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(instruction, centerX, height - 50);
-  }, [faceDetected, alignment.stable, state, challengeStep, challengeColors, instruction]);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.lineWidth = 3;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    ctx.strokeText(instruction, centerX, height - 30);
+    ctx.fillText(instruction, centerX, height - 30);
+
+    ctx.restore();
+  }, [faceDetected, alignment, state, challengeStep, challengeColors, instruction]);
 
   // Face detection callback
   const onResults = useCallback((results) => {
@@ -298,7 +431,19 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
       }
 
       setChallengeStep(step);
-      setInstruction(`Look at the ${challengeColors[step].color.toLowerCase()} light`);
+      setInstruction(`Look at the ${challengeColors[step].name} light`);
+
+      // Brief white flash before each color (except first) for better visibility
+      if (step > 0) {
+        setTimeout(() => {
+          setChallengeStep(-1); // Special state for white flash
+          setInstruction('Get ready...');
+          setTimeout(() => {
+            setChallengeStep(step);
+            setInstruction(`Look at the ${challengeColors[step].name} light`);
+          }, 200);
+        }, 100);
+      }
 
       // Sample brightness during this step
       setTimeout(() => {
@@ -309,13 +454,14 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
           samples: [...prev.samples, {
             step,
             color: challengeColors[step].color,
+            name: challengeColors[step].name,
             brightness: Math.random() * 0.5 + 0.3, // Simulate brightness variation
             timestamp: Date.now()
           }]
         }));
 
         runChallengeStep(step + 1);
-      }, challengeColors[step].durationMs);
+      }, challengeColors[step].durationMs + (step > 0 ? 300 : 0)); // Extra time for white flash
     };
 
     runChallengeStep(0);
@@ -329,8 +475,17 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
         if (!stabilityTimerRef.current) {
           stabilityTimerRef.current = setTimeout(() => {
             setState('ready');
-            setInstruction('Perfect! Starting liveness check...');
-            setTimeout(() => startChallenge(), 1000);
+            setInstruction('Challenge starting in 3...');
+            let countdown = 3;
+            const countdownInterval = setInterval(() => {
+              countdown--;
+              if (countdown > 0) {
+                setInstruction(`Challenge starting in ${countdown}...`);
+              } else {
+                clearInterval(countdownInterval);
+                setTimeout(() => startChallenge(), 500);
+              }
+            }, 1000);
           }, 1000);
         }
       } else {
