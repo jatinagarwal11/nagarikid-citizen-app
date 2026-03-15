@@ -109,8 +109,8 @@ export const LivenessDetector = ({ onComplete, onCancel }) => {
       // Draw arrow pointing to center
       const angle = Math.atan2(centerY - faceY, centerX - faceX);
       const arrowLength = 30;
-      const arrowX = faceX + Math.cos(angle) * 25;
-      const arrowY = faceY + Math.sin(angle) * 25;
+      const arrowX = faceX + Math.cos(angle) * arrowLength;
+      const arrowY = faceY + Math.sin(angle) * arrowLength;
 
       ctx.beginPath();
       ctx.moveTo(faceX, faceY);
