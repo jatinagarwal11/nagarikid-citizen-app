@@ -330,13 +330,27 @@
   100% { width: 100%; }
 }
 
-.extracted-data {
+.scanned-id-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   background: var(--muted);
   border: 1px solid var(--border);
   padding: 1rem 1.25rem;
   border-radius: var(--radius);
   margin: 0 0 1rem;
+}
+.scanned-portrait {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+.extracted-data {
   text-align: left;
+  flex: 1;
 }
 
 .extracted-data p {

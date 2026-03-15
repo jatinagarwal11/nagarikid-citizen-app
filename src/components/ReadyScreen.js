@@ -4,7 +4,7 @@ const ReadyScreen = ({ onBeginScan }) => {
   return (
     <div className="ready-screen">
       <div className="ready-content">
-        <div className="project-name">NagarikID</div>
+        <div className="project-name">NagarikAPI</div>
 
         <h1 className="title">Face ID Verification</h1>
 

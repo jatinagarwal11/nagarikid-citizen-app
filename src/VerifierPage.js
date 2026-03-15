@@ -79,7 +79,7 @@ function QRScanner({ onResult, verifierToken }) {
   return (
     <div>
       <h2 className="scanner-heading">Scan Citizen QR</h2>
-      <p className="verifier-subtitle">Point your camera at a NagarikID QR code</p>
+      <p className="verifier-subtitle">Point your camera at a NagarikAPI QR code</p>
       <div id="reader" className="qr-reader" />
     </div>
   );

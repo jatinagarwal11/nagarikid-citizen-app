@@ -18,7 +18,7 @@ function LandingPage({ onSelectCitizen, onSelectVerifier, onSelectAdmin }) {
       <div className="landing-inner">
         <div className="landing-brand">
           <div className="brand-mark">N</div>
-          <h1 className="landing-title">NagarikID</h1>
+          <h1 className="landing-title">NagarikAPI</h1>
           <p className="landing-subtitle">Nepal's digital identity platform</p>
         </div>
 
@@ -80,6 +80,8 @@ function CitizenFlow({ onBack }) {
   const [activeTab, setActiveTab] = useState('identity');
   const [graphData, setGraphData] = useState(null);
   const [auditData, setAuditData] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState('');
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -136,9 +138,6 @@ function CitizenFlow({ onBack }) {
     }
   };
 
-  const [scanning, setScanning] = useState(false);
-  const [scanProgress, setScanProgress] = useState('');
-
   const captureImage = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -175,7 +174,7 @@ function CitizenFlow({ onBack }) {
           national_id: scannedData.national_id,
           name: scannedData.name,
           dob: scannedData.dob,
-          photo_url: 'https://via.placeholder.com/100',
+          photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=face',
           password,
         }),
       });
@@ -250,10 +249,13 @@ function CitizenFlow({ onBack }) {
           <div className="step-card">
             <span className="step-label">Step 2</span>
             <h2>Verify Identity</h2>
-            <div className="extracted-data">
-              <p><strong>National ID:</strong> {scannedData.national_id}</p>
-              <p><strong>Name:</strong> {scannedData.name}</p>
-              <p><strong>DOB:</strong> {scannedData.dob}</p>
+            <div className="scanned-id-card">
+              <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&h=120&fit=crop&crop=face" alt="Scanned portrait" className="scanned-portrait" />
+              <div className="extracted-data">
+                <p><strong>National ID:</strong> {scannedData.national_id}</p>
+                <p><strong>Name:</strong> {scannedData.name}</p>
+                <p><strong>DOB:</strong> {scannedData.dob}</p>
+              </div>
             </div>
             <button className="btn-primary" onClick={() => setRegistrationStep('face_id_verify')}>
               Start Face Verification
@@ -294,7 +296,7 @@ function CitizenFlow({ onBack }) {
           <button className="back-link" onClick={onBack}>← Back</button>
         </div>
         <div className="login-inner">
-          <h1>NagarikID</h1>
+          <h1>NagarikAPI</h1>
           <p className="login-subtitle">Sign in to your digital identity</p>
           <input id="national_id" placeholder="National ID" className="input" />
           <input id="password" type="password" placeholder="Password" className="input" />
@@ -311,7 +313,7 @@ function CitizenFlow({ onBack }) {
   if (!user) {
     return (
       <div className="loading">
-        <h1>NagarikID</h1>
+        <h1>NagarikAPI</h1>
         <p>Loading your digital identity…</p>
       </div>
     );

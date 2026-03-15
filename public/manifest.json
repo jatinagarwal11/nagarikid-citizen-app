@@ -1,6 +1,6 @@
 {
-  "short_name": "NagarikID",
-  "name": "NagarikID Citizen App",
+  "short_name": "NagarikAPI",
+  "name": "NagarikAPI Citizen App",
   "icons": [
     {
       "src": "favicon.ico",
