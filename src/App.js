@@ -136,6 +136,9 @@ function CitizenFlow({ onBack }) {
     }
   };
 
+  const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState('');
+
   const captureImage = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -143,10 +146,24 @@ function CitizenFlow({ onBack }) {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
-    setScannedData({ national_id: '123456789', name: 'John Doe', dob: '1990-01-01' });
-    setRegistrationStep('verify');
     const stream = video.srcObject;
     if (stream) stream.getTracks().forEach((t) => t.stop());
+
+    setScanning(true);
+    setScanProgress('Detecting document edges…');
+
+    setTimeout(() => setScanProgress('Reading MRZ zone…'), 800);
+    setTimeout(() => setScanProgress('Extracting text via OCR…'), 1800);
+    setTimeout(() => setScanProgress('Parsing fields…'), 2800);
+    setTimeout(() => {
+      setScanProgress('Validating data…');
+    }, 3500);
+    setTimeout(() => {
+      setScanning(false);
+      setScanProgress('');
+      setScannedData({ national_id: '123456789', name: 'Aarav Thapa', dob: '1998-07-15' });
+      setRegistrationStep('verify');
+    }, 4200);
   };
 
   const registerUser = async (password) => {
@@ -217,7 +234,15 @@ function CitizenFlow({ onBack }) {
             <p>Position your ID card in front of the camera.</p>
             <video ref={videoRef} autoPlay playsInline className="camera-preview" />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
-            <button className="btn-primary" onClick={captureImage}>Capture</button>
+            {scanning ? (
+              <div className="ocr-scanning">
+                <div className="ocr-spinner" />
+                <p className="ocr-status">{scanProgress}</p>
+                <div className="ocr-progress-bar"><div className="ocr-progress-fill" /></div>
+              </div>
+            ) : (
+              <button className="btn-primary" onClick={captureImage}>Capture &amp; Scan</button>
+            )}
           </div>
         )}
 
