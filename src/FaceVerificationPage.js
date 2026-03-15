@@ -1,10 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import ReadyScreen from './components/ReadyScreen';
 import CameraScanScreen from './components/CameraScanScreen';
 import './FaceVerification.css';
 
-const FaceVerificationPage = ({ onBack }) => {
+const FaceVerificationPage = ({ onBack, onSuccess }) => {
   const [state, setState] = useState('ready');
+
+  useEffect(() => {
+    if (state === 'success' && onSuccess) {
+      onSuccess();
+    }
+  }, [state, onSuccess]);
 
   const handleBeginScan = useCallback(() => {
     setState('requesting_permission');
@@ -78,6 +84,11 @@ const FaceVerificationPage = ({ onBack }) => {
             <h2>Verification Complete</h2>
             <p>Your face has been successfully verified.</p>
             <div className="result-buttons">
+              {onSuccess && (
+                <button className="retry-button" onClick={onSuccess}>
+                  Continue Registration
+                </button>
+              )}
               <button className="retry-button" onClick={handleRetry}>
                 Verify Again
               </button>

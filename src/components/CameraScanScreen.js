@@ -21,8 +21,15 @@ const CameraScanScreen = ({
 
   const [currentPrompt, setCurrentPrompt] = useState('Initializing camera...');
   const [ovalState, setOvalState] = useState('grey');
+  const shouldKeepCameraActive =
+    state === 'requesting_permission' ||
+    state === 'camera_loading' ||
+    state === 'no_face' ||
+    state === 'aligning' ||
+    state === 'ready_to_scan' ||
+    state === 'scanning';
 
-  const { stream, error: cameraError } = useCameraStream(state === 'requesting_permission');
+  const { stream, error: cameraError } = useCameraStream(shouldKeepCameraActive);
 
   const {
     faceDetected,

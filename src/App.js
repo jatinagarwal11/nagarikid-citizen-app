@@ -10,10 +10,9 @@ function App() {
   const [qrData, setQrData] = useState('');
   const [countdown, setCountdown] = useState(5);
   const [showRegister, setShowRegister] = useState(false);
-  const [registrationStep, setRegistrationStep] = useState('scan'); // scan, verify, form
+  const [registrationStep, setRegistrationStep] = useState('scan'); // scan, verify, face_verify, form
   const [scannedData, setScannedData] = useState(null);
   const [livenessVerified, setLivenessVerified] = useState(false);
-  const [showFaceVerification, setShowFaceVerification] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
@@ -131,7 +130,7 @@ function App() {
   };
 
   const performLivenessCheck = () => {
-    setRegistrationStep('liveness');
+    setRegistrationStep('face_verify');
   };
 
   const handleLivenessComplete = (result) => {
@@ -146,6 +145,11 @@ function App() {
 
   const handleLivenessCancel = () => {
     setRegistrationStep('verify');
+  };
+
+  const handleFaceVerificationSuccess = () => {
+    setLivenessVerified(true);
+    setRegistrationStep('form');
   };
 
   const registerUser = async (password) => {
@@ -201,10 +205,6 @@ function App() {
   }, [showRegister, registrationStep]);
 
   if (!loggedIn) {
-    if (showFaceVerification) {
-      return <FaceVerificationPage onBack={() => setShowFaceVerification(false)} />;
-    }
-
     if (showRegister) {
       // Registration flow
       return (
@@ -248,6 +248,15 @@ function App() {
               />
             </div>
           )}
+
+          {registrationStep === 'face_verify' && (
+            <div className="liveness-step">
+              <FaceVerificationPage
+                onBack={() => setRegistrationStep('verify')}
+                onSuccess={handleFaceVerificationSuccess}
+              />
+            </div>
+          )}
           
           {registrationStep === 'form' && scannedData && livenessVerified && (
             <div className="form-step">
@@ -272,8 +281,6 @@ function App() {
           <button onClick={() => login(document.getElementById('national_id').value, document.getElementById('password').value)}>Login</button>
           <br />
           <button onClick={() => setShowRegister(true)}>Register New Account</button>
-          <br />
-          <button onClick={() => setShowFaceVerification(true)}>Face Verification Demo</button>
         </div>
       );
     }
