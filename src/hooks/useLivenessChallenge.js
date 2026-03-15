@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 const LIVENESS_COLORS = [
-  '#0066cc', // blue
-  '#dc3545', // red
-  '#28a745', // green
-  '#ff9900', // orange
-  '#cc00cc', // purple
+  '#00ffff', // electric cyan
+  '#ff00ff', // hot magenta
+  '#39ff14', // neon green
+  '#ff3300', // neon red-orange
+  '#ffff00', // neon yellow
 ];
 
-// CSS hue-rotate degrees matching each color
-const LIVENESS_HUES = [0, 120, 240, 60, 300];
+// Dramatic hue-rotate degrees for each step
+const LIVENESS_HUES = [180, 300, 90, 0, 60];
 
 const FLASH_DURATION = 2000; // ms per color
 

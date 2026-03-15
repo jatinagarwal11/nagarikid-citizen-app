@@ -159,8 +159,8 @@ const CameraScanScreen = ({
           muted
           onLoadedMetadata={handleVideoLoaded}
           style={isScanning ? {
-            filter: `hue-rotate(${currentHue}deg) saturate(1.6) contrast(1.05)`,
-            transition: 'filter 0.1s ease',
+            filter: `hue-rotate(${currentHue}deg) saturate(3) brightness(1.4) contrast(1.3)`,
+            transition: 'filter 0.25s ease',
           } : undefined}
         />
         <canvas ref={canvasRef} className="camera-canvas" />

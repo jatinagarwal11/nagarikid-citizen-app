@@ -12,12 +12,12 @@
 }
 
 .screen-flash-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 100;
-  opacity: 0.28;
+  opacity: 0.5;
   pointer-events: none;
-  transition: background-color 0.08s ease;
+  transition: background-color 0.2s ease;
 }
 
 .scan-header {
