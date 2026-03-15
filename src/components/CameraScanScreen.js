@@ -40,6 +40,8 @@ const CameraScanScreen = ({
   const {
     isRunning: livenessRunning,
     currentColor,
+    currentHue,
+    progress: livenessProgress,
   } = useLivenessChallenge(state === 'scanning');
   const isScanning = state === 'scanning';
 
@@ -86,10 +88,10 @@ const CameraScanScreen = ({
 
   // Handle liveness completion
   useEffect(() => {
-    if (state === 'scanning' && !livenessRunning) {
+    if (state === 'scanning' && !livenessRunning && livenessProgress === 100) {
       onLivenessComplete();
     }
-  }, [state, livenessRunning, onLivenessComplete]);
+  }, [state, livenessRunning, livenessProgress, onLivenessComplete]);
 
   // Update UI based on current state
   useEffect(() => {
@@ -145,13 +147,6 @@ const CameraScanScreen = ({
 
   return (
     <div className="camera-scan-screen">
-      {isScanning && (
-        <div
-          className="screen-flash-overlay"
-          style={{ backgroundColor: currentColor }}
-        />
-      )}
-
       <div className="scan-header">
         <h1 className="scan-title">Face ID Verification</h1>
       </div>
@@ -163,15 +158,12 @@ const CameraScanScreen = ({
           playsInline
           muted
           onLoadedMetadata={handleVideoLoaded}
-          style={isScanning ? { filter: 'saturate(1.15) contrast(1.1) brightness(1.05)' } : undefined}
+          style={isScanning ? {
+            filter: `hue-rotate(${currentHue}deg) saturate(1.6) contrast(1.05)`,
+            transition: 'filter 0.1s ease',
+          } : undefined}
         />
         <canvas ref={canvasRef} className="camera-canvas" />
-        {isScanning && (
-          <div
-            className="camera-feed-tint"
-            style={{ backgroundColor: currentColor }}
-          />
-        )}
 
         <div className="camera-overlay" ref={overlayRef}>
           <div className={`oval-guide oval-${ovalState}`}>
@@ -190,6 +182,13 @@ const CameraScanScreen = ({
           Make sure your face is clearly visible and well lit
         </p>
       </div>
+
+      {isScanning && (
+        <div
+          className="screen-flash-overlay"
+          style={{ backgroundColor: currentColor }}
+        />
+      )}
     </div>
   );
 };
