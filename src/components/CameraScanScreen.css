@@ -113,8 +113,40 @@
 }
 
 .oval-scanning .oval-border {
-  border-color: #00aaff;
-  animation: pulse 1s infinite;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── spinning progress ring (SVG over the oval) ───────── */
+.oval-progress-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.oval-progress-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 4;
+}
+
+.oval-progress-arc {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+  /* ellipse perimeter ≈ 694 for rx=98, ry=123 */
+  stroke-dasharray: 694;
+  stroke-dashoffset: 694;
+  animation: oval-spin 2s linear forwards;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+@keyframes oval-spin {
+  from { stroke-dashoffset: 694; }
+  to   { stroke-dashoffset: 0; }
 }
 
 @keyframes pulse {

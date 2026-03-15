@@ -42,6 +42,7 @@ const CameraScanScreen = ({
     currentColor,
     currentHue,
     progress: livenessProgress,
+    currentStep,
   } = useLivenessChallenge(state === 'scanning');
   const isScanning = state === 'scanning';
 
@@ -168,6 +169,19 @@ const CameraScanScreen = ({
         <div className="camera-overlay" ref={overlayRef}>
           <div className={`oval-guide oval-${ovalState}`}>
             <div className="oval-border" />
+            {isScanning && currentColor && (
+              <svg className="oval-progress-ring" viewBox="0 0 200 250" key={currentStep}>
+                <ellipse
+                  className="oval-progress-track"
+                  cx="100" cy="125" rx="98" ry="123"
+                />
+                <ellipse
+                  className="oval-progress-arc"
+                  cx="100" cy="125" rx="98" ry="123"
+                  style={{ stroke: currentColor }}
+                />
+              </svg>
+            )}
           </div>
 
           <div className="prompt-container">

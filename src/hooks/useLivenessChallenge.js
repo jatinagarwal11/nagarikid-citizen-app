@@ -8,28 +8,47 @@ const LIVENESS_COLORS = [
   '#ffff00', // neon yellow
 ];
 
-// Dramatic hue-rotate degrees for each step
 const LIVENESS_HUES = [180, 300, 90, 0, 60];
-
 const FLASH_DURATION = 2000; // ms per color
 
 export const useLivenessChallenge = (shouldStart) => {
-  const [isRunning, setIsRunning] = useState(false);
-  const [currentColor, setCurrentColor] = useState('#0066cc');
+  const [currentColor, setCurrentColor] = useState(null);
   const [currentHue, setCurrentHue] = useState(0);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
 
-  const intervalRef = useRef();
-  const startTimeRef = useRef(0);
+  const intervalRef = useRef(null);
+  const runningRef = useRef(false);
 
-  const startChallenge = useCallback(() => {
+  const cleanup = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    runningRef.current = false;
+    setIsRunning(false);
+    setCurrentColor(null);
+    setCurrentHue(0);
+    setProgress(0);
+    setCurrentStep(0);
+  }, []);
+
+  useEffect(() => {
+    if (!shouldStart) {
+      cleanup();
+      return;
+    }
+
+    // Already started — don't restart
+    if (runningRef.current) return;
+
+    runningRef.current = true;
     setIsRunning(true);
     setCurrentStep(0);
     setProgress(0);
     setCurrentColor(LIVENESS_COLORS[0]);
     setCurrentHue(LIVENESS_HUES[0]);
-    startTimeRef.current = Date.now();
 
     let step = 0;
     intervalRef.current = setInterval(() => {
@@ -40,40 +59,22 @@ export const useLivenessChallenge = (shouldStart) => {
         setCurrentHue(LIVENESS_HUES[step]);
         setProgress((step / LIVENESS_COLORS.length) * 100);
       } else {
-        // Challenge complete
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        runningRef.current = false;
         setIsRunning(false);
         setProgress(100);
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-        }
       }
     }, FLASH_DURATION);
-  }, []);
-
-  const stopChallenge = useCallback(() => {
-    setIsRunning(false);
-    setProgress(0);
-    setCurrentStep(0);
-    setCurrentColor('#0066cc');
-    setCurrentHue(0);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (shouldStart && !isRunning) {
-      startChallenge();
-    } else if (!shouldStart && isRunning) {
-      stopChallenge();
-    }
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
+      runningRef.current = false;
     };
-  }, [shouldStart, isRunning, startChallenge, stopChallenge]);
+  }, [shouldStart, cleanup]);
 
   return {
     isRunning,
@@ -81,5 +82,6 @@ export const useLivenessChallenge = (shouldStart) => {
     currentHue,
     progress,
     currentStep,
+    totalSteps: LIVENESS_COLORS.length,
   };
 };
