@@ -1,52 +1,137 @@
+/* ── Login ─────────────────────────────── */
 .login {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
+  background: var(--background);
+  gap: 0.25rem;
+}
+
+.login h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
 }
 
 .login input {
-  margin: 10px;
-  padding: 10px;
-  width: 200px;
+  width: 260px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  margin: 0.35rem 0;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.login input:focus {
+  border-color: var(--foreground);
+}
+
+.login input::placeholder {
+  color: var(--muted-foreground);
 }
 
 .login button {
-  padding: 10px 20px;
-  margin: 5px;
+  width: 260px;
+  padding: 0.65rem 0;
+  margin-top: 0.5rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
 }
 
+.login button:hover {
+  opacity: 0.85;
+}
+
+.login button:last-of-type {
+  background: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.login button:last-of-type:hover {
+  background: var(--muted);
+}
+
+/* ── Register ──────────────────────────── */
 .register {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  padding: 20px;
+  min-height: 100vh;
+  padding: 2rem;
+  background: var(--background);
 }
 
 .register h1 {
-  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
 }
 
 .register h2 {
-  margin-bottom: 15px;
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
 }
 
 .register p {
-  margin-bottom: 10px;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
   text-align: center;
 }
 
 .register button {
-  padding: 10px 20px;
-  margin: 10px;
+  padding: 0.6rem 1.25rem;
+  margin: 0.4rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.register button:hover {
+  opacity: 0.85;
 }
 
 .scan-step, .verify-step, .form-step {
   text-align: center;
-  max-width: 500px;
+  max-width: 440px;
+}
+
+.form-step input {
+  width: 260px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+  outline: none;
+}
+
+.form-step input:focus {
+  border-color: var(--foreground);
 }
 
 .liveness-step {
@@ -55,29 +140,74 @@
 }
 
 .extracted-data {
-  background: #f5f5f5;
-  padding: 15px;
-  border-radius: 5px;
-  margin: 15px 0;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin: 1rem 0;
 }
 
 .extracted-data p {
-  margin: 5px 0;
+  margin: 0.3rem 0;
   text-align: left;
+  font-size: 0.8125rem;
+  color: var(--foreground);
 }
 
+.extracted-data strong {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+/* ── ID Card ───────────────────────────── */
 .id-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
-  border: 1px solid #ccc;
-  max-width: 300px;
-  margin: 50px auto;
+  padding: 2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 320px;
+  margin: 3rem auto;
+  background: var(--card);
 }
 
 .id-card img {
   width: 100px;
   height: 100px;
-  margin-bottom: 10px;
+  margin-bottom: 0.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
+.id-card h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+.id-card p {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  margin: 0.15rem 0;
+}
+
+/* ── Loading ───────────────────────────── */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.loading h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.loading p {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
 }
