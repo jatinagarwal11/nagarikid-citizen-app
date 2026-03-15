@@ -97,6 +97,10 @@
   border-color: #0066cc;
 }
 
+.oval-green .oval-border {
+  border-color: #00c853;
+}
+
 .oval-scanning .oval-border {
   border-color: #00aaff;
   animation: pulse 1s infinite;

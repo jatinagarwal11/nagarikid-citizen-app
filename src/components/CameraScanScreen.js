@@ -66,6 +66,9 @@ const CameraScanScreen = ({
         onFaceLost();
       } else if (faceAligned) {
         onFaceAligned();
+      } else if (state === 'no_face') {
+        // Face returned, move to alignment state so UI can show guidance.
+        onFaceDetected();
       }
     }
   }, [state, faceDetected, faceAligned, onFaceDetected, onFaceLost, onFaceAligned]);
@@ -104,7 +107,7 @@ const CameraScanScreen = ({
         break;
       case 'ready_to_scan':
         setCurrentPrompt('Hold still');
-        setOvalState('blue');
+        setOvalState('green');
         break;
       case 'scanning':
         setCurrentPrompt('Hold still while we scan');

@@ -24,15 +24,15 @@ export const useFaceTracking = (stream, isActive) => {
       Math.pow(newPosition.y - ovalCenterY, 2)
     );
 
-    const isCentered = distanceFromCenter < ovalRadius * 0.8;
-    const isRightSize = newPosition.width > 0.18 && newPosition.width < 0.35;
+    const isCentered = distanceFromCenter < ovalRadius * 0.95;
+    const isRightSize = newPosition.width > 0.12 && newPosition.width < 0.45;
 
     if (isCentered && isRightSize) {
       if (stableStartTimeRef.current === 0) {
         stableStartTimeRef.current = now;
-      } else if (now - stableStartTimeRef.current > 1000) {
+      } else if (now - stableStartTimeRef.current > 500) {
         setFaceAligned(true);
-        setAlignmentPrompt('Perfect position');
+        setAlignmentPrompt('Face centered. Hold still');
       }
       return;
     }
