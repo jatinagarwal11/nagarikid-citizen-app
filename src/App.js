@@ -137,11 +137,32 @@ function CitizenFlow({ onBack }) {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch {
       alert('Camera access denied.');
     }
+  };
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    // Stop camera if running
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach((t) => t.stop());
+    }
+    setScanning(true);
+    setScanProgress('Detecting document edges…');
+    setTimeout(() => setScanProgress('Reading MRZ zone…'), 800);
+    setTimeout(() => setScanProgress('Extracting text via OCR…'), 1800);
+    setTimeout(() => setScanProgress('Parsing fields…'), 2800);
+    setTimeout(() => setScanProgress('Validating data…'), 3500);
+    setTimeout(() => {
+      setScanning(false);
+      setScanProgress('');
+      setScannedData({ national_id: '123456789', name: 'Jatin Agarwal', dob: '1998-07-15' });
+      setRegistrationStep('verify');
+    }, 4200);
   };
 
   const captureImage = () => {
@@ -246,7 +267,14 @@ function CitizenFlow({ onBack }) {
                 <div className="ocr-progress-bar"><div className="ocr-progress-fill" /></div>
               </div>
             ) : (
-              <button className="btn-primary" onClick={captureImage}>Capture &amp; Scan</button>
+              <div className="scan-actions">
+                <button className="btn-primary" onClick={captureImage}>Capture &amp; Scan</button>
+                <div className="upload-divider"><span>or</span></div>
+                <label className="btn-secondary upload-label">
+                  Upload Photo of ID
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                </label>
+              </div>
             )}
           </div>
         )}
